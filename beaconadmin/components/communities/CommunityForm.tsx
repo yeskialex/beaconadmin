@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Save, Loader2, Upload, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import CommunityApplicationForm from './CommunityApplicationForm'
 
 const communitySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -35,6 +36,8 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string>(initialData?.avatar_url || '')
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_url || '')
+  const [showApplicationSettings, setShowApplicationSettings] = useState(false)
+  const [newCommunityId, setNewCommunityId] = useState<string | null>(null)
   const supabase = createClient()
   
   const {
@@ -184,9 +187,16 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
       const result = await response.json()
 
       if (response.ok) {
-        toast.success(isEditing ? 'Community updated successfully!' : 'Community created successfully!')
-        router.push('/communities')
-        router.refresh()
+        if (!isEditing && result.community) {
+          // For new communities, show application settings
+          setNewCommunityId(result.community.id)
+          setShowApplicationSettings(true)
+          toast.success('Community created! Now configure application settings.')
+        } else {
+          toast.success(isEditing ? 'Community updated successfully!' : 'Community created successfully!')
+          router.push('/dashboard/communities')
+          router.refresh()
+        }
       } else {
         toast.error(result.error || 'Failed to save community')
       }
@@ -373,31 +383,79 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
         </div>
       </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {isEditing ? 'Updating...' : 'Creating...'}
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              {isEditing ? 'Update Community' : 'Create Community'}
-            </>
+      {/* Application Settings - Show for existing communities or after creating new one */}
+      {((isEditing && initialData?.id) || (showApplicationSettings && newCommunityId)) && (
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            {!isEditing ? 'Configure Application Settings (Optional)' : 'Application Settings'}
+          </h3>
+          <CommunityApplicationForm
+            communityId={(isEditing ? initialData?.id : newCommunityId) as string}
+            isEditing={isEditing}
+          />
+          {!isEditing && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+              <p className="text-sm text-blue-700">
+                You can configure how users apply to join your community. These settings are optional and can be updated later.
+              </p>
+            </div>
           )}
-        </button>
+        </div>
+      )}
+
+      <div className="flex justify-end space-x-3">
+        {showApplicationSettings && !isEditing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/dashboard/communities')
+                router.refresh()
+              }}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Skip for Now
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/dashboard/communities')
+                router.refresh()
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Finish Setup
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || showApplicationSettings}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {isEditing ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isEditing ? 'Update Community' : 'Create Community'}
+                </>
+              )}
+            </button>
+          </>
+        )}
       </div>
     </form>
   )

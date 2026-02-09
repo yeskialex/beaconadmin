@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share } from 'lucide-react'
 
 export default function PostsPage() {
+  const router = useRouter()
   const [posts, setPosts] = useState([])
   const [stats, setStats] = useState({ total: 0, official: 0, pinned: 0 })
   const [loading, setLoading] = useState(true)
@@ -296,7 +298,7 @@ export default function PostsPage() {
                         <button
                           className="text-blue-600 hover:text-blue-900 transition-colors"
                           title="View Details"
-                          onClick={() => alert('View post details functionality coming soon')}
+                          onClick={() => router.push(`/dashboard/posts/${post.id}`)}
                         >
                           <Eye className="h-4 w-4" />
                         </button>

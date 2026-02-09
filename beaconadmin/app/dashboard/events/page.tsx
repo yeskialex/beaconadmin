@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Calendar, Clock, MapPin, Users, Eye, Edit, Trash2, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 export default function EventsPage() {
+  const router = useRouter()
   const [events, setEvents] = useState([])
   const [stats, setStats] = useState({ total: 0, upcoming: 0, community: 0, private: 0 })
   const [loading, setLoading] = useState(true)
@@ -295,7 +297,7 @@ export default function EventsPage() {
                           <button
                             className="text-blue-600 hover:text-blue-900 transition-colors"
                             title="View Details"
-                            onClick={() => alert('View event details functionality coming soon')}
+                            onClick={() => router.push(`/dashboard/events/${event.id}`)}
                           >
                             <Eye className="h-4 w-4" />
                           </button>

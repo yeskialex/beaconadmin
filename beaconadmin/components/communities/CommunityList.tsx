@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Edit, Trash2, Users, Eye, Plus } from 'lucide-react'
+import { Edit, Trash2, Users, Eye, Plus, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CommunityList() {
@@ -197,6 +197,13 @@ export default function CommunityList() {
                       title="View Details"
                     >
                       <Eye className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      href={`/dashboard/communities/${community.id}/applications`}
+                      className="text-green-600 hover:text-green-900 transition-colors"
+                      title="Applications"
+                    >
+                      <FileText className="h-4 w-4" />
                     </Link>
                     <Link
                       href={`/dashboard/communities/${community.id}/edit`}

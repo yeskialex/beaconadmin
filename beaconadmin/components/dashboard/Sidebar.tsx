@@ -7,10 +7,10 @@ import {
   Users,
   FileText,
   Calendar,
-  Settings,
   Flag,
   LogOut,
   Shield,
+  Mail,
 } from 'lucide-react'
 import { AdminUser } from '@/lib/auth/auth-utils'
 
@@ -23,9 +23,9 @@ const navigation = [
   { name: 'Communities', href: '/dashboard/communities', icon: Users },
   { name: 'Members', href: '/dashboard/members', icon: Shield },
   { name: 'Posts', href: '/dashboard/posts', icon: FileText },
+  { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
   { name: 'Events', href: '/dashboard/events', icon: Calendar },
   { name: 'Reports', href: '/dashboard/reports', icon: Flag },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 export default function Sidebar({ admin }: SidebarProps) {
