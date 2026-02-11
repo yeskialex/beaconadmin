@@ -311,10 +311,11 @@ export type Database = {
           },
         ]
       }
-      community_join_requests: {
+      community_join_applications: {
         Row: {
           community_id: string
           id: string
+          join_request_id: string | null
           message: string | null
           rejection_reason: string | null
           requested_at: string | null
@@ -322,10 +323,13 @@ export type Database = {
           reviewed_by: string | null
           status: Database["public"]["Enums"]["request_status"]
           user_id: string
+          answers: Json | null
+          agreed_to_guidelines: boolean | null
         }
         Insert: {
           community_id: string
           id?: string
+          join_request_id?: string | null
           message?: string | null
           rejection_reason?: string | null
           requested_at?: string | null
@@ -333,10 +337,13 @@ export type Database = {
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           user_id: string
+          answers?: Json | null
+          agreed_to_guidelines?: boolean | null
         }
         Update: {
           community_id?: string
           id?: string
+          join_request_id?: string | null
           message?: string | null
           rejection_reason?: string | null
           requested_at?: string | null
@@ -344,13 +351,22 @@ export type Database = {
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           user_id?: string
+          answers?: Json | null
+          agreed_to_guidelines?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "community_join_requests_community_id_fkey"
+            foreignKeyName: "community_join_applications_community_id_fkey"
             columns: ["community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_join_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1033,10 +1049,10 @@ export type Database = {
         }
         Returns: string
       }
-      process_join_request: {
+      process_join_application: {
         Args: {
           p_rejection_reason?: string
-          p_request_id: string
+          p_application_id: string
           p_status: Database["public"]["Enums"]["request_status"]
         }
         Returns: boolean

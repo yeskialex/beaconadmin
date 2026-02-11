@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 interface ApplicationAnswer {
   answer: string
   answered_at: string
+  question_id?: string
 }
 
 interface Application {
@@ -211,7 +212,7 @@ export default function ApplicationReview({ communityId, communityName }: Applic
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as any)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Applications</option>
             <option value="pending">Pending</option>
@@ -289,6 +290,26 @@ export default function ApplicationReview({ communityId, communityName }: Applic
                             Agreed to guidelines
                           </span>
                         )}
+
+                        {/* Response completion indicator */}
+                        {questions.length > 0 && (
+                          <span className="flex items-center text-gray-500">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            {(() => {
+                              const answeredCount = questions.filter(question => {
+                                const answer = application.answers?.find(ans =>
+                                  ans.question_id === question.id
+                                ) || (
+                                  application.answers && application.answers.length > 0
+                                    ? application.answers[questions.indexOf(question)]
+                                    : null
+                                )
+                                return answer?.answer?.trim()
+                              }).length
+                              return `${answeredCount}/${questions.length} responses`
+                            })()}
+                          </span>
+                        )}
                       </div>
 
                       {application.message && (
@@ -327,23 +348,47 @@ export default function ApplicationReview({ communityId, communityName }: Applic
                 {expandedApplications.has(application.id) && (
                   <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
                     {/* Questions and Answers */}
-                    {questions.length > 0 && application.answers && (
+                    {questions.length > 0 && (
                       <div>
-                        <h5 className="text-sm font-medium text-gray-900 mb-3">Application Responses</h5>
+                        <h5 className="text-sm font-medium text-gray-900 mb-3">
+                          Application Questions & Responses
+                          <span className="ml-2 text-xs text-gray-500">({questions.length} questions)</span>
+                        </h5>
                         <div className="space-y-3">
-                          {questions.map((question, index) => {
-                            const answer = application.answers?.[index]
+                          {questions.map((question) => {
+                            // Find the answer that matches this question ID
+                            const answer = application.answers?.find(ans =>
+                              ans.question_id === question.id
+                            ) || (
+                              // Fallback: try to match by index for backwards compatibility
+                              application.answers && application.answers.length > 0
+                                ? application.answers[questions.indexOf(question)]
+                                : null
+                            )
+
                             return (
-                              <div key={question.id} className="bg-gray-50 rounded p-3">
+                              <div key={question.id} className={`rounded p-3 border ${answer?.answer ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                                 <p className="text-sm font-medium text-gray-700">
+                                  <span className="text-xs text-gray-500 mr-2">Q{question.question_order}:</span>
                                   {question.question_text}
                                   {question.is_required && <span className="text-red-500 ml-1">*</span>}
                                 </p>
-                                <p className="mt-1 text-sm text-gray-600">
-                                  {answer?.answer || <span className="italic text-gray-400">No response</span>}
-                                </p>
+                                <div className="mt-2">
+                                  {answer?.answer ? (
+                                    <div className="text-sm text-gray-800 bg-white rounded p-2 border">
+                                      {answer.answer}
+                                    </div>
+                                  ) : (
+                                    <div className="text-sm italic text-gray-400 bg-gray-100 rounded p-2">
+                                      No response provided
+                                      {question.is_required && (
+                                        <span className="text-red-500 ml-1 font-medium">(Required)</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                                 {answer?.answered_at && (
-                                  <p className="mt-1 text-xs text-gray-400">
+                                  <p className="mt-2 text-xs text-gray-400">
                                     Answered: {new Date(answer.answered_at).toLocaleString()}
                                   </p>
                                 )}
@@ -367,7 +412,7 @@ export default function ApplicationReview({ communityId, communityName }: Applic
                             [application.id]: e.target.value
                           }))}
                           rows={2}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-black placeholder-gray-600"
                           placeholder="Provide a reason for rejection..."
                         />
 

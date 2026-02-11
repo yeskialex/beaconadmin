@@ -11,25 +11,37 @@ import {
   LogOut,
   Shield,
   Mail,
+  Settings,
 } from 'lucide-react'
-import { AdminUser } from '@/lib/auth/auth-utils'
+import { AdminUser, isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
 interface SidebarProps {
   admin: AdminUser
 }
 
-const navigation = [
+// Base navigation items available to all admins
+const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Communities', href: '/dashboard/communities', icon: Users },
   { name: 'Members', href: '/dashboard/members', icon: Shield },
   { name: 'Posts', href: '/dashboard/posts', icon: FileText },
-  { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
   { name: 'Events', href: '/dashboard/events', icon: Calendar },
   { name: 'Reports', href: '/dashboard/reports', icon: Flag },
 ]
 
+// Additional navigation items only for super admins
+const superAdminNavigation = [
+  { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
+  { name: 'Admin Management', href: '/dashboard/admin-management', icon: Settings },
+]
+
 export default function Sidebar({ admin }: SidebarProps) {
   const pathname = usePathname()
+
+  // Build navigation based on admin role
+  const navigation = isSuperAdmin(admin)
+    ? [...baseNavigation, ...superAdminNavigation]
+    : baseNavigation
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })

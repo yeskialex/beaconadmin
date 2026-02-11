@@ -16,13 +16,13 @@ export default async function MembersPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  // Fetch pending join requests
+  // Fetch pending join applications
   const { data: pendingRequests } = await supabase
-    .from('community_join_requests')
+    .from('community_join_applications')
     .select(`
       *,
       communities(name),
-      profiles!community_join_requests_user_id_fkey(full_name, email)
+      profiles!community_join_applications_user_id_fkey(full_name, email)
     `)
     .eq('status', 'pending')
     .order('requested_at', { ascending: false })
@@ -32,7 +32,7 @@ export default async function MembersPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Member Management</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Manage users, verify profiles, and handle community join requests.
+          Manage users, verify profiles, and handle community join applications.
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default async function MembersPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pending Requests
+                    Pending Applications
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {pendingRequests?.length || 0}
@@ -99,11 +99,11 @@ export default async function MembersPage() {
         </div>
       </div>
 
-      {/* Pending Join Requests */}
+      {/* Pending Join Applications */}
       {pendingRequests && pendingRequests.length > 0 && (
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Join Requests</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Join Applications</h3>
             <div className="space-y-4">
               {pendingRequests.map((request) => (
                 <div key={request.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">

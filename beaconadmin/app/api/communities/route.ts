@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServerSupabaseAdminClient } from '@/lib/supabase/server'
-import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
+import { validateAdminSession, logAdminActivity, isSuperAdmin, isCommunityAdmin } from '@/lib/auth/auth-utils'
 import { z } from 'zod'
 
 const createCommunitySchema = z.object({
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       .insert({
         ...data,
         creator_id: systemUserId, // Use system user as creator for admin-created communities
+        created_by_admin_id: admin.id, // Track which admin created it
         avatar_url: data.avatar_url || null,
         cover_url: data.cover_url || null,
         university_id: data.scope === 'global' ? null : data.university_id,
@@ -65,11 +66,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // If created by community admin, auto-assign them to the community
+    if (isCommunityAdmin(admin)) {
+      const { error: assignError } = await supabase
+        .from('admin_community_assignments')
+        .insert({
+          admin_id: admin.id,
+          community_id: community.id,
+          assigned_by: admin.id // Self-assignment for created communities
+        })
+
+      if (assignError) {
+        console.error('Error auto-assigning community:', assignError)
+        // Don't fail the creation, just log the error
+      }
+    }
+
     // Log the activity
     await logAdminActivity(
-      'community_created', 
-      'communities', 
-      community.id, 
+      'community_created',
+      'communities',
+      community.id,
       { name: community.name }
     )
 
@@ -94,16 +111,40 @@ export async function GET() {
       )
     }
 
-    const supabase = await createServerSupabaseClient()
-    
-    // Fetch communities
-    const { data: communities, error } = await supabase
+    const supabase = await createServerSupabaseAdminClient()
+
+    let query = supabase
       .from('communities')
       .select(`
         *,
         universities(name)
       `)
-      .order('created_at', { ascending: false })
+
+    // Filter based on admin role
+    if (isSuperAdmin(admin)) {
+      // Super admins see all communities
+      query = query.order('created_at', { ascending: false })
+    } else if (isCommunityAdmin(admin)) {
+      // Community admins only see their assigned communities
+      const assignedCommunityIds = admin.assigned_communities || []
+
+      if (assignedCommunityIds.length === 0) {
+        // No assigned communities
+        return NextResponse.json({ communities: [] })
+      }
+
+      query = query
+        .in('id', assignedCommunityIds)
+        .order('created_at', { ascending: false })
+    } else {
+      // Unknown role, no access
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { data: communities, error } = await query
 
     if (error) {
       console.error('Error fetching communities:', error)
@@ -113,7 +154,7 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ communities })
+    return NextResponse.json({ communities: communities || [] })
   } catch (error) {
     console.error('Fetch communities error:', error)
     return NextResponse.json(

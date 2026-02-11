@@ -1,15 +1,24 @@
 import bcrypt from 'bcryptjs'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServerSupabaseAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
-export interface AdminUser {
-  id: string
-  email: string
-  full_name: string | null
-  role: string | null
-  is_active: boolean | null
-}
+// Re-export AdminUser interface and client-side functions from client-auth-utils
+export type {
+  AdminUser
+} from './client-auth-utils'
+
+export {
+  isSuperAdmin,
+  isCommunityAdmin,
+  canAccessCommunity,
+  canCreateCommunityAdmin,
+  canUploadNewsletter,
+  canAccessGlobalReports,
+  canDeleteCommunity,
+  canAssignCommunities,
+  needsPasswordChange
+} from './client-auth-utils'
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
@@ -24,7 +33,7 @@ export function generateSessionToken(): string {
 }
 
 export async function createAdminSession(adminUserId: string): Promise<string> {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseAdminClient()
   const token = generateSessionToken()
   const tokenHash = await hashPassword(token)
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
@@ -62,8 +71,8 @@ export async function validateAdminSession(): Promise<AdminUser | null> {
     return null
   }
 
-  const supabase = await createServerSupabaseClient()
-  
+  const supabase = await createServerSupabaseAdminClient()
+
   // Get all active sessions and check token against each
   const { data: sessions } = await supabase
     .from('admin_sessions')
@@ -79,7 +88,19 @@ export async function validateAdminSession(): Promise<AdminUser | null> {
   for (const session of sessions) {
     const isValid = await verifyPassword(sessionToken, session.token_hash)
     if (isValid) {
-      return session.admin_users as AdminUser
+      const adminUser = session.admin_users as AdminUser
+
+      // For community admins, fetch their assigned communities
+      if (adminUser.role === 'community_admin') {
+        const { data: assignments } = await supabase
+          .from('admin_community_assignments')
+          .select('community_id')
+          .eq('admin_id', adminUser.id)
+
+        adminUser.assigned_communities = assignments?.map(a => a.community_id) || []
+      }
+
+      return adminUser
     }
   }
 
@@ -92,7 +113,7 @@ export async function logAdminActivity(
   entityId?: string,
   details?: any
 ) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseAdminClient()
   const admin = await validateAdminSession()
   
   if (!admin) return
@@ -111,8 +132,8 @@ export async function logout() {
   const sessionToken = cookieStore.get('admin-session')?.value
 
   if (sessionToken) {
-    const supabase = await createServerSupabaseClient()
-    
+    const supabase = await createServerSupabaseAdminClient()
+
     // Delete session from database
     const { data: sessions } = await supabase
       .from('admin_sessions')
@@ -135,4 +156,81 @@ export async function logout() {
 
   // Clear cookie
   cookieStore.delete('admin-session')
+}
+
+// Server-only functions below this line
+
+export async function updatePasswordChanged(adminId: string): Promise<void> {
+  const supabase = await createServerSupabaseAdminClient()
+
+  await supabase
+    .from('admin_users')
+    .update({
+      must_change_password: false,
+      password_changed_at: new Date().toISOString()
+    })
+    .eq('id', adminId)
+}
+
+export async function getAdminAssignedCommunities(adminId: string): Promise<string[]> {
+  const supabase = await createServerSupabaseAdminClient()
+
+  // Use the database function we created
+  const { data } = await supabase.rpc('get_admin_assigned_communities', {
+    admin_uuid: adminId
+  })
+
+  return data?.map((row: any) => row.community_id) || []
+}
+
+export async function createCommunityAdmin(
+  email: string,
+  tempPassword: string,
+  fullName: string | null = null,
+  createdBy: string
+): Promise<{ id: string; tempPassword: string } | null> {
+  const supabase = await createServerSupabaseAdminClient()
+
+  const passwordHash = await hashPassword(tempPassword)
+
+  const { data, error } = await supabase
+    .from('admin_users')
+    .insert({
+      email,
+      password_hash: passwordHash,
+      full_name: fullName,
+      role: 'community_admin',
+      must_change_password: true,
+      created_by: createdBy
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('Error creating community admin:', error)
+    return null
+  }
+
+  return {
+    id: data.id,
+    tempPassword
+  }
+}
+
+export async function assignCommunityToAdmin(
+  adminId: string,
+  communityId: string,
+  assignedBy: string
+): Promise<boolean> {
+  const supabase = await createServerSupabaseAdminClient()
+
+  const { error } = await supabase
+    .from('admin_community_assignments')
+    .insert({
+      admin_id: adminId,
+      community_id: communityId,
+      assigned_by: assignedBy
+    })
+
+  return !error
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServerSupabaseAdminClient } from '@/lib/supabase/server'
-import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
+import { validateAdminSession, logAdminActivity, canAccessCommunity, canDeleteCommunity } from '@/lib/auth/auth-utils'
 
 export async function GET(
   request: NextRequest,
@@ -17,6 +17,15 @@ export async function GET(
     }
 
     const { id: communityId } = await params
+
+    // Check if admin can access this community
+    if (!canAccessCommunity(admin, communityId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No access to this community' },
+        { status: 403 }
+      )
+    }
+
     const supabase = await createServerSupabaseAdminClient()
 
     // Fetch single community
@@ -58,9 +67,18 @@ export async function DELETE(
       )
     }
 
+    const { id: communityId } = await params
+
+    // Check if admin can delete communities (only super admins)
+    if (!canDeleteCommunity(admin)) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Only super admins can delete communities' },
+        { status: 403 }
+      )
+    }
+
     // Use admin client to bypass RLS
     const supabase = await createServerSupabaseAdminClient()
-    const { id: communityId } = await params
 
     // Get community details before deletion for logging
     const { data: community } = await supabase
@@ -79,36 +97,38 @@ export async function DELETE(
     // Start transaction-like deletions (Supabase will handle foreign key constraints)
     // Delete in proper order to avoid constraint violations
 
-    // 1. Delete post comments for all posts in this community
-    const { error: commentsError } = await supabase
-      .from('post_comments')
-      .delete()
-      .in('post_id',
-        supabase
-          .from('community_posts')
-          .select('id')
-          .eq('community_id', communityId)
-      )
+    // First, get all post IDs for this community
+    const { data: communityPosts } = await supabase
+      .from('community_posts')
+      .select('id')
+      .eq('community_id', communityId)
 
-    if (commentsError) {
-      console.error('Error deleting post comments:', commentsError)
-      // Continue with deletion even if comments fail
+    const postIds = communityPosts?.map(post => post.id) || []
+
+    // 1. Delete post comments for all posts in this community
+    if (postIds.length > 0) {
+      const { error: commentsError } = await supabase
+        .from('post_comments')
+        .delete()
+        .in('post_id', postIds)
+
+      if (commentsError) {
+        console.error('Error deleting post comments:', commentsError)
+        // Continue with deletion even if comments fail
+      }
     }
 
     // 2. Delete post likes for all posts in this community
-    const { error: likesError } = await supabase
-      .from('post_likes')
-      .delete()
-      .in('post_id',
-        supabase
-          .from('community_posts')
-          .select('id')
-          .eq('community_id', communityId)
-      )
+    if (postIds.length > 0) {
+      const { error: likesError } = await supabase
+        .from('post_likes')
+        .delete()
+        .in('post_id', postIds)
 
-    if (likesError) {
-      console.error('Error deleting post likes:', likesError)
-      // Continue with deletion even if likes fail
+      if (likesError) {
+        console.error('Error deleting post likes:', likesError)
+        // Continue with deletion even if likes fail
+      }
     }
 
     // 3. Delete all posts in this community
@@ -139,14 +159,14 @@ export async function DELETE(
       )
     }
 
-    // 5. Delete community join requests
-    const { error: joinRequestsError } = await supabase
-      .from('community_join_requests')
+    // 5. Delete community join applications
+    const { error: joinApplicationsError } = await supabase
+      .from('community_join_applications')
       .delete()
       .eq('community_id', communityId)
 
-    if (joinRequestsError) {
-      console.error('Error deleting join requests:', joinRequestsError)
+    if (joinApplicationsError) {
+      console.error('Error deleting join applications:', joinApplicationsError)
       // Continue with deletion
     }
 
@@ -217,10 +237,19 @@ export async function PATCH(
       )
     }
 
+    const { id: communityId } = await params
+
+    // Check if admin can access this community
+    if (!canAccessCommunity(admin, communityId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No access to this community' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     // Use admin client to bypass RLS
     const supabase = await createServerSupabaseAdminClient()
-    const { id: communityId } = await params
 
     // Update community
     const { error } = await supabase
@@ -271,10 +300,19 @@ export async function PUT(
       )
     }
 
+    const { id: communityId } = await params
+
+    // Check if admin can access this community
+    if (!canAccessCommunity(admin, communityId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No access to this community' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     // Use admin client to bypass RLS
     const supabase = await createServerSupabaseAdminClient()
-    const { id: communityId } = await params
 
     // Update community
     const { error } = await supabase

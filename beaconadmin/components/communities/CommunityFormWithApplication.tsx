@@ -386,7 +386,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
               <input
                 {...register('name')}
                 type="text"
-                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 placeholder-gray-600"
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-600"
                 placeholder="e.g., Photography Club"
               />
               {errors.name && (
@@ -401,7 +401,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
               <textarea
                 {...register('description')}
                 rows={3}
-                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 placeholder-gray-600"
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-600"
                 placeholder="Describe your community's purpose and activities"
               />
             </div>
@@ -450,7 +450,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
               <label className="block text-sm font-medium text-gray-700">Community Scope</label>
               <select
                 {...register('scope')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-black"
               >
                 <option value="global">Global</option>
                 <option value="institutional">Institutional</option>
@@ -462,7 +462,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                 <label className="block text-sm font-medium text-gray-700">University</label>
                 <select
                   {...register('university_id')}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-black"
                 >
                   <option value="">Select University</option>
                   {universities.map((uni) => (
@@ -498,7 +498,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
             <textarea
               {...register('join_description')}
               rows={4}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md text-black placeholder-gray-600"
               placeholder="Welcome message shown to users before they apply to join..."
             />
             {errors.join_description && (
@@ -513,7 +513,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
             <input
               {...register('join_button_text')}
               type="text"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md text-black placeholder-gray-600"
               placeholder="Apply to Join"
             />
           </div>
@@ -525,7 +525,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
             <textarea
               {...register('guidelines_text')}
               rows={6}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md text-black placeholder-gray-600"
               placeholder="1. Be respectful to all members&#10;2. No spam or self-promotion&#10;3. Keep discussions relevant..."
             />
             {errors.guidelines_text && (
@@ -553,7 +553,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                 <input
                   {...register('agreement_prompt')}
                   type="text"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md text-black placeholder-gray-600"
                   placeholder="Do you agree to follow the group guidelines?"
                 />
               </div>
@@ -629,7 +629,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                       type="text"
                       value={question.question_text}
                       onChange={(e) => updateQuestion(index, 'question_text', e.target.value)}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md text-black placeholder-gray-600"
                       placeholder="Why do you want to join this community?"
                     />
                   </div>
@@ -643,7 +643,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                         type="text"
                         value={question.placeholder_text || ''}
                         onChange={(e) => updateQuestion(index, 'placeholder_text', e.target.value)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-600"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-black placeholder-gray-600"
                         placeholder="Hint text..."
                       />
                     </div>
@@ -656,7 +656,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                         type="number"
                         value={question.max_length}
                         onChange={(e) => updateQuestion(index, 'max_length', parseInt(e.target.value))}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-black"
                         min="50"
                         max="2000"
                       />

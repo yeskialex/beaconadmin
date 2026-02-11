@@ -4,7 +4,7 @@ import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; applicationId: string } }
+  { params }: { params: Promise<{ id: string; applicationId: string }> }
 ) {
   try {
     // Validate admin session
@@ -16,21 +16,21 @@ export async function POST(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
     const { userId } = await request.json()
 
-    // Update join request status to accepted
+    // Update join application status to accepted
     const { error: updateError } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .update({
         status: 'accepted',
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: admin.id
+        reviewed_at: new Date().toISOString()
       })
-      .eq('id', params.applicationId)
+      .eq('id', resolvedParams.applicationId)
 
     if (updateError) {
-      console.error('Error updating join request:', updateError)
+      console.error('Error updating join application:', updateError)
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
@@ -38,7 +38,7 @@ export async function POST(
     const { error: memberError } = await supabase
       .from('community_members')
       .insert({
-        community_id: params.id,
+        community_id: resolvedParams.id,
         user_id: userId,
         role: 'user'
       })
@@ -52,8 +52,8 @@ export async function POST(
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'approve_application', 'community_join_request', params.applicationId, {
-      community_id: params.id,
+    await logAdminActivity(admin.id, 'approve_application', 'community_join_application', resolvedParams.applicationId, {
+      community_id: resolvedParams.id,
       user_id: userId
     })
 

@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; requestId: string }> }
 ) {
   try {
-    console.log('Starting PATCH request for join request')
+    console.log('Starting PATCH request for join application')
 
     // Validate admin session
     const admin = await validateAdminSession()
@@ -38,32 +38,32 @@ export async function PATCH(
     const supabase = await createServerSupabaseAdminClient()
     console.log('Supabase admin client created')
 
-    // Get the join request details
-    console.log('Fetching join request from database...')
+    // Get the join application details
+    console.log('Fetching join application from database...')
     const { data: joinRequest, error: fetchError } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .select('*')
       .eq('id', requestId)
       .eq('community_id', communityId)
       .single()
 
     if (fetchError) {
-      console.error('Error fetching join request:', fetchError)
+      console.error('Error fetching join application:', fetchError)
       return NextResponse.json(
-        { error: 'Join request not found', details: fetchError.message },
+        { error: 'Join application not found', details: fetchError.message },
         { status: 404 }
       )
     }
 
     if (!joinRequest) {
-      console.log('Join request not found')
+      console.log('Join application not found')
       return NextResponse.json(
-        { error: 'Join request not found' },
+        { error: 'Join application not found' },
         { status: 404 }
       )
     }
 
-    console.log('Join request found:', { id: joinRequest.id, status: joinRequest.status })
+    console.log('Join application found:', { id: joinRequest.id, status: joinRequest.status })
 
     if (joinRequest.status !== 'pending') {
       console.log('Request already processed:', joinRequest.status)
@@ -73,12 +73,12 @@ export async function PATCH(
       )
     }
 
-    // Update the join request status
+    // Update the join application status
     // Note: reviewed_by expects a UUID from auth.users, not admin_users
     // We'll use the system user ID for now
     const systemUserId = '2e393a2a-30cc-42f4-b415-c2645fba0078' // Same as used for creating communities
 
-    console.log('Updating join request status to:', action)
+    console.log('Updating join application status to:', action)
     const updateData = {
       status: action === 'approve' ? 'accepted' : 'declined',
       reviewed_at: new Date().toISOString(),
@@ -87,21 +87,21 @@ export async function PATCH(
     console.log('Update data:', updateData)
 
     const { data: updateResult, error: updateError } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .update(updateData)
       .eq('id', requestId)
       .select()
 
     if (updateError) {
-      console.error('Error updating join request:', updateError)
+      console.error('Error updating join application:', updateError)
       console.error('Error details:', updateError.message, updateError.code)
       return NextResponse.json(
-        { error: 'Failed to update join request', details: updateError.message },
+        { error: 'Failed to update join application', details: updateError.message },
         { status: 500 }
       )
     }
 
-    console.log('Join request updated successfully:', updateResult)
+    console.log('Join application updated successfully:', updateResult)
 
     // If approved, add user to community members
     if (action === 'approve') {
@@ -124,7 +124,7 @@ export async function PATCH(
             id: memberId,
             community_id: communityId,
             user_id: joinRequest.user_id,
-            role: 'member',
+            role: 'user',
             joined_at: new Date().toISOString()
           })
           .select()
@@ -166,8 +166,8 @@ export async function PATCH(
 
     // Log the activity
     await logAdminActivity(
-      `join_request_${action}d`,
-      'community_join_requests',
+      `join_application_${action}d`,
+      'community_join_applications',
       requestId,
       {
         community_id: communityId,
@@ -183,7 +183,7 @@ export async function PATCH(
       message: `Request ${action}d successfully`
     })
   } catch (error) {
-    console.error('Process join request error:', error)
+    console.error('Process join application error:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(

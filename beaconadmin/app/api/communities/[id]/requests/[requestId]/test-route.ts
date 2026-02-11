@@ -24,7 +24,7 @@ export async function PATCH(
 
     // Step 5: Simple update test
     const { data, error } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .update({
         status: action === 'approve' ? 'approved' : 'rejected',
         reviewed_at: new Date().toISOString()

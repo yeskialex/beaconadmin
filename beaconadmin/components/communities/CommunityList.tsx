@@ -37,7 +37,7 @@ export default function CommunityList() {
       `• All posts in this community\n` +
       `• All comments on those posts\n` +
       `• All events in this community\n` +
-      `• All members and join requests\n\n` +
+      `• All members and join applications\n\n` +
       `This action CANNOT be undone.\n\n` +
       `Type "DELETE" to confirm you want to proceed:`
     )) {
@@ -155,13 +155,9 @@ export default function CommunityList() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {community.is_private ? (
-                    <Link
-                      href={`/dashboard/communities/${community.id}/requests`}
-                      className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer"
-                      title="View join requests"
-                    >
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
                       Private
-                    </Link>
+                    </span>
                   ) : (
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">
                       Public

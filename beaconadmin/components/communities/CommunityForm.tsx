@@ -217,7 +217,7 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
           <input
             {...register('name')}
             type="text"
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-600"
             placeholder="e.g., Photography Club, Korean Students Association, Study Group"
           />
           {errors.name && (
@@ -232,7 +232,7 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
           <textarea
             {...register('description')}
             rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black placeholder-gray-600"
             placeholder="Describe your community's purpose, activities, and who should join (e.g., 'A welcoming space for photography enthusiasts to share tips, organize photo walks, and showcase their work')"
           />
           {errors.description && (
@@ -350,7 +350,7 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
               {...register('university_id')}
               className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 text-black"
             >
-              <option value="" className="text-gray-500">Select a university (required for institutional communities)</option>
+              <option value="" className="text-black">Select a university (required for institutional communities)</option>
               {universities.map((university) => (
                 <option key={university.id} value={university.id}>
                   {university.name}

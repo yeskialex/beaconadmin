@@ -4,7 +4,7 @@ import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -16,67 +16,55 @@ export async function GET(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     // Get filter from query params
     const { searchParams } = new URL(request.url)
     const filter = searchParams.get('filter') || 'pending'
 
-    // Build query for join requests
+    // Build query for join applications
     let query = supabase
-      .from('community_join_requests')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          full_name,
-          email,
-          avatar_url,
-          user_name
-        )
-      `)
-      .eq('community_id', params.id)
+      .from('community_join_applications')
+      .select('*')
+      .eq('community_id', resolvedParams.id)
       .order('requested_at', { ascending: false })
 
     if (filter !== 'all') {
       query = query.eq('status', filter)
     }
 
-    const { data: joinRequests, error: joinError } = await query
+    const { data: joinApplications, error: joinError } = await query
 
     if (joinError) {
-      console.error('Error fetching join requests:', joinError)
+      console.error('Error fetching join applications:', joinError)
       return NextResponse.json({ error: joinError.message }, { status: 500 })
     }
 
-    // Get join applications with answers
-    const userIds = joinRequests?.map(req => req.user_id) || []
+    // Get profile data for each application
+    if (joinApplications && joinApplications.length > 0) {
+      const userIds = joinApplications.map(app => app.user_id)
 
-    if (userIds.length > 0) {
-      const { data: applications, error: appError } = await supabase
-        .from('community_join_applications')
-        .select('*')
-        .eq('community_id', params.id)
-        .in('user_id', userIds)
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url, user_name')
+        .in('id', userIds)
 
-      if (appError) {
-        console.error('Error fetching applications:', appError)
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError)
+        return NextResponse.json({ error: profileError.message }, { status: 500 })
       }
 
-      // Merge application data with join requests
-      const mergedData = joinRequests?.map(request => {
-        const application = applications?.find(app => app.user_id === request.user_id)
-        return {
-          ...request,
-          answers: application?.answers || [],
-          agreed_to_guidelines: application?.agreed_to_guidelines || false
-        }
-      })
+      // Merge profile data with applications
+      const applicationsWithProfiles = joinApplications.map(app => ({
+        ...app,
+        profiles: profiles?.find(profile => profile.id === app.user_id) || null
+      }))
 
-      return NextResponse.json({ applications: mergedData || [] })
+      return NextResponse.json({ applications: applicationsWithProfiles })
     }
 
-    return NextResponse.json({ applications: joinRequests || [] })
+    return NextResponse.json({ applications: [] })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, FileText, Users, Settings, HelpCircle, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, FileText, Users, Settings, HelpCircle, AlertCircle, Upload, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
@@ -28,6 +28,8 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
   const [joinDescription, setJoinDescription] = useState('')
   const [joinCoverUrl, setJoinCoverUrl] = useState('')
   const [joinButtonText, setJoinButtonText] = useState('Join Community')
+  const [joinCoverFile, setJoinCoverFile] = useState<File | null>(null)
+  const [joinCoverPreview, setJoinCoverPreview] = useState<string>('')
 
   // Guidelines
   const [guidelinesText, setGuidelinesText] = useState('')
@@ -57,6 +59,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
       if (joinInfo) {
         setJoinDescription(joinInfo.description || '')
         setJoinCoverUrl(joinInfo.cover_url || '')
+        setJoinCoverPreview(joinInfo.cover_url || '')
         setJoinButtonText(joinInfo.button_text || 'Join Community')
       }
 
@@ -142,12 +145,70 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
     setQuestions(updatedQuestions)
   }
 
+  const handleJoinCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Cover image must be less than 10MB')
+        return
+      }
+      setJoinCoverFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setJoinCoverPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const uploadJoinCoverImage = async (): Promise<string | null> => {
+    if (!joinCoverFile) return joinCoverUrl
+
+    try {
+      const fileExt = joinCoverFile.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      const filePath = fileName
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('community-covers')
+        .upload(filePath, joinCoverFile)
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('community-covers')
+        .getPublicUrl(filePath)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading join cover image:', error)
+      toast.error('Failed to upload cover image')
+      return null
+    }
+  }
+
   const saveApplicationSettings = async () => {
     try {
       setLoading(true)
 
+      // Upload cover image if a new file was selected
+      let uploadedCoverUrl = joinCoverUrl
+      if (joinCoverFile) {
+        const newCoverUrl = await uploadJoinCoverImage()
+        if (newCoverUrl) {
+          uploadedCoverUrl = newCoverUrl
+          setJoinCoverUrl(newCoverUrl) // Update the URL state
+        } else {
+          setLoading(false)
+          return
+        }
+      }
+
       // Only save if there's actual data to save
-      const hasJoinInfo = joinDescription || joinCoverUrl || (joinButtonText && joinButtonText !== 'Join Community')
+      const hasJoinInfo = joinDescription || uploadedCoverUrl || (joinButtonText && joinButtonText !== 'Join Community')
       const hasGuidelines = guidelinesText
       const hasQuestions = questions.length > 0 && questions.some(q => q.question_text)
 
@@ -156,7 +217,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
         const joinInfoData = {
           community_id: communityId,
           description: joinDescription,
-          cover_url: joinCoverUrl,
+          cover_url: uploadedCoverUrl,
           button_text: joinButtonText || 'Join Community'
         }
 
@@ -238,6 +299,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
+            type="button"
             onClick={() => setActiveTab('settings')}
             className={`${
               activeTab === 'settings'
@@ -249,6 +311,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
             Join Page Settings
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('guidelines')}
             className={`${
               activeTab === 'guidelines'
@@ -260,6 +323,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
             Guidelines
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('questions')}
             className={`${
               activeTab === 'questions'
@@ -287,7 +351,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                 value={joinDescription}
                 onChange={(e) => setJoinDescription(e.target.value)}
                 rows={4}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-600"
                 placeholder="Welcome message or description shown on the join page..."
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -297,17 +361,46 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image URL
+                Cover Image
               </label>
-              <input
-                type="text"
-                value={joinCoverUrl}
-                onChange={(e) => setJoinCoverUrl(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                placeholder="https://example.com/image.jpg"
-              />
+              <div className="mt-1 space-y-4">
+                {joinCoverPreview && (
+                  <div className="relative">
+                    <img
+                      src={joinCoverPreview}
+                      alt="Join page cover preview"
+                      className="w-full h-32 object-cover rounded-md border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setJoinCoverFile(null)
+                        setJoinCoverPreview('')
+                        setJoinCoverUrl('')
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                <label
+                  htmlFor="join-cover-upload"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {joinCoverPreview ? 'Change Cover' : 'Upload Cover'}
+                </label>
+                <input
+                  id="join-cover-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleJoinCoverChange}
+                />
+              </div>
               <p className="mt-1 text-sm text-gray-500">
-                Optional cover image displayed on the join page.
+                Optional cover image displayed on the join page. Wide image recommended (1200x300px), max 10MB.
               </p>
             </div>
 
@@ -319,7 +412,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                 type="text"
                 value={joinButtonText}
                 onChange={(e) => setJoinButtonText(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-600"
                 placeholder="Join Community"
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -341,7 +434,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                 value={guidelinesText}
                 onChange={(e) => setGuidelinesText(e.target.value)}
                 rows={8}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-600"
                 placeholder="1. Be respectful to all members&#10;2. No spam or self-promotion&#10;3. Keep discussions relevant..."
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -371,7 +464,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                     type="text"
                     value={agreementPrompt}
                     onChange={(e) => setAgreementPrompt(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-600"
                     placeholder="Do you agree to follow the group guidelines?"
                   />
                   <p className="mt-1 text-sm text-gray-500">
@@ -388,6 +481,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Application Questions</h3>
               <button
+                type="button"
                 onClick={addQuestion}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
@@ -404,6 +498,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                   Add questions to require users to apply before joining.
                 </p>
                 <button
+                  type="button"
                   onClick={addQuestion}
                   className="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                 >
@@ -423,6 +518,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
+                          type="button"
                           onClick={() => moveQuestion(index, 'up')}
                           disabled={index === 0}
                           className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -430,6 +526,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                           <ChevronUp className="h-4 w-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => moveQuestion(index, 'down')}
                           disabled={index === questions.length - 1}
                           className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -437,6 +534,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                           <ChevronDown className="h-4 w-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => removeQuestion(index)}
                           className="p-1 text-red-400 hover:text-red-600"
                         >
@@ -454,7 +552,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                           type="text"
                           value={question.question_text}
                           onChange={(e) => updateQuestion(index, 'question_text', e.target.value)}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-600"
                           placeholder="Why do you want to join this community?"
                         />
                       </div>
@@ -468,7 +566,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                             type="text"
                             value={question.placeholder_text || ''}
                             onChange={(e) => updateQuestion(index, 'placeholder_text', e.target.value)}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm text-black placeholder-gray-600"
                             placeholder="Hint text for answer field..."
                           />
                         </div>
@@ -481,7 +579,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                             type="number"
                             value={question.max_length}
                             onChange={(e) => updateQuestion(index, 'max_length', parseInt(e.target.value))}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm text-black placeholder-gray-600"
                             min="50"
                             max="2000"
                           />
@@ -525,6 +623,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
       {/* Save Button */}
       <div className="flex justify-end">
         <button
+          type="button"
           onClick={saveApplicationSettings}
           disabled={loading}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"

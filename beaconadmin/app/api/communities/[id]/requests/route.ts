@@ -19,17 +19,17 @@ export async function GET(
     const { id: communityId } = await params
     const supabase = await createServerSupabaseAdminClient()
 
-    // Fetch join requests
+    // Fetch join applications
     const { data: requests, error } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .select('*')
       .eq('community_id', communityId)
       .order('requested_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching join requests:', error)
+      console.error('Error fetching join applications:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch join requests' },
+        { error: 'Failed to fetch join applications' },
         { status: 500 }
       )
     }
@@ -82,7 +82,7 @@ export async function GET(
 
     return NextResponse.json({ requests: transformedRequests })
   } catch (error) {
-    console.error('Fetch join requests error:', error)
+    console.error('Fetch join applications error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

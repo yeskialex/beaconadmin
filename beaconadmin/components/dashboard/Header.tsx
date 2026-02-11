@@ -1,7 +1,7 @@
 'use client'
 
 import { Bell, Search } from 'lucide-react'
-import { AdminUser } from '@/lib/auth/auth-utils'
+import { AdminUser } from '@/lib/auth/client-auth-utils'
 
 interface HeaderProps {
   admin: AdminUser

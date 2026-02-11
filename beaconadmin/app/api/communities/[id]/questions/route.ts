@@ -4,7 +4,7 @@ import { validateAdminSession } from '@/lib/auth/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -16,13 +16,14 @@ export async function GET(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     // Fetch questions for the community
     const { data: questions, error } = await supabase
       .from('community_questions')
       .select('*')
-      .eq('community_id', params.id)
+      .eq('community_id', resolvedParams.id)
       .order('question_order')
 
     if (error) {

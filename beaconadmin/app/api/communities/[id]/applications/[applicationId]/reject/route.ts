@@ -4,7 +4,7 @@ import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; applicationId: string } }
+  { params }: { params: Promise<{ id: string; applicationId: string }> }
 ) {
   try {
     // Validate admin session
@@ -16,28 +16,28 @@ export async function POST(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
     const { rejection_reason } = await request.json()
 
-    // Update join request status to declined
+    // Update join application status to declined
     const { error: updateError } = await supabase
-      .from('community_join_requests')
+      .from('community_join_applications')
       .update({
         status: 'declined',
         reviewed_at: new Date().toISOString(),
-        reviewed_by: admin.id,
         rejection_reason: rejection_reason
       })
-      .eq('id', params.applicationId)
+      .eq('id', resolvedParams.applicationId)
 
     if (updateError) {
-      console.error('Error updating join request:', updateError)
+      console.error('Error updating join application:', updateError)
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'reject_application', 'community_join_request', params.applicationId, {
-      community_id: params.id,
+    await logAdminActivity(admin.id, 'reject_application', 'community_join_application', resolvedParams.applicationId, {
+      community_id: resolvedParams.id,
       rejection_reason: rejection_reason
     })
 
