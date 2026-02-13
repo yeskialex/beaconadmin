@@ -329,8 +329,15 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
 
   const stepTitles = ['Basic Information', 'Application Settings', 'Application Questions', 'Review & Create']
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (currentStep === 4 || isEditing) {
+      handleSubmit(onSubmit)(e)
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Progress Steps */}
       {!isEditing && (
         <div className="mb-8">
@@ -750,7 +757,8 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
             </button>
           ) : (
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit(onSubmit)}
               disabled={isLoading}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
             >

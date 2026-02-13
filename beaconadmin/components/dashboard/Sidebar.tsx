@@ -12,6 +12,8 @@ import {
   Shield,
   Mail,
   Settings,
+  Image,
+  Bell,
 } from 'lucide-react'
 import { AdminUser, isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
@@ -26,11 +28,13 @@ const baseNavigation = [
   { name: 'Members', href: '/dashboard/members', icon: Shield },
   { name: 'Posts', href: '/dashboard/posts', icon: FileText },
   { name: 'Events', href: '/dashboard/events', icon: Calendar },
+  { name: 'Notices', href: '/dashboard/notices', icon: Bell },
   { name: 'Reports', href: '/dashboard/reports', icon: Flag },
 ]
 
 // Additional navigation items only for super admins
 const superAdminNavigation = [
+  { name: 'Banners', href: '/dashboard/banners', icon: Image },
   { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
   { name: 'Admin Management', href: '/dashboard/admin-management', icon: Settings },
 ]

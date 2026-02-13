@@ -177,3 +177,139 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Delete community admin (Super Admin only)
+export async function DELETE(request: NextRequest) {
+  try {
+    const admin = await validateAdminSession()
+    if (!admin || !canCreateCommunityAdmin(admin)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { admin_id } = body
+
+    // Validate required fields
+    if (!admin_id) {
+      return NextResponse.json(
+        { error: 'Admin ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createServerSupabaseAdminClient()
+
+    // Verify the admin exists and is a community admin
+    const { data: targetAdmin, error: adminError } = await supabase
+      .from('admin_users')
+      .select('id, email, role, full_name')
+      .eq('id', admin_id)
+      .eq('role', 'community_admin')
+      .single()
+
+    if (adminError || !targetAdmin) {
+      return NextResponse.json(
+        { error: 'Community admin not found' },
+        { status: 404 }
+      )
+    }
+
+    // Prevent super admin from deleting themselves or other super admins
+    if (targetAdmin.role === 'super_admin' || admin_id === admin.id) {
+      return NextResponse.json(
+        { error: 'Cannot delete super admin accounts or your own account' },
+        { status: 400 }
+      )
+    }
+
+    // Get assigned communities before deletion for logging
+    const { data: assignments } = await supabase
+      .from('admin_community_assignments')
+      .select('community_id, communities(name)')
+      .eq('admin_id', admin_id)
+
+    // Delete all related data in the correct order
+
+    // 1. Delete admin sessions
+    const { error: sessionsError } = await supabase
+      .from('admin_sessions')
+      .delete()
+      .eq('admin_user_id', admin_id)
+
+    if (sessionsError) {
+      console.error('Error deleting admin sessions:', sessionsError)
+    }
+
+    // 2. Delete community assignments
+    const { error: assignmentsError } = await supabase
+      .from('admin_community_assignments')
+      .delete()
+      .eq('admin_id', admin_id)
+
+    if (assignmentsError) {
+      console.error('Error deleting community assignments:', assignmentsError)
+    }
+
+    // 3. Delete activity logs (optional - may want to keep for audit trail)
+    const { error: logsError } = await supabase
+      .from('admin_activity_logs')
+      .delete()
+      .eq('admin_user_id', admin_id)
+
+    if (logsError) {
+      console.error('Error deleting activity logs:', logsError)
+      // Continue even if this fails - logs are not critical for deletion
+    }
+
+    // 4. Finally, delete the admin user
+    const { error: deleteError } = await supabase
+      .from('admin_users')
+      .delete()
+      .eq('id', admin_id)
+
+    if (deleteError) {
+      console.error('Error deleting admin user:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete community admin account' },
+        { status: 500 }
+      )
+    }
+
+    // Log the deletion activity
+    await supabase.from('admin_activity_logs').insert({
+      admin_user_id: admin.id,
+      action: 'community_admin_deleted',
+      entity_type: 'admin_users',
+      entity_id: admin_id,
+      details: {
+        deleted_admin_email: targetAdmin.email,
+        deleted_admin_name: targetAdmin.full_name,
+        assigned_communities: assignments?.map(a => ({
+          id: a.community_id,
+          name: a.communities?.name
+        })) || [],
+        deleted_by: admin.id,
+        deleted_by_email: admin.email
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: `Community admin "${targetAdmin.email}" has been deleted successfully`,
+      deleted_admin: {
+        id: targetAdmin.id,
+        email: targetAdmin.email,
+        full_name: targetAdmin.full_name
+      }
+    })
+  } catch (error) {
+    console.error('Delete community admin error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

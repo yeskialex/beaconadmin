@@ -1,23 +1,40 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { validateAdminSession } from '@/lib/auth/auth-utils'
+import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
+import { redirect } from 'next/navigation'
 import { Users, Mail, Calendar, Check, X } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function MembersPage() {
+  // Validate admin session
+  const admin = await validateAdminSession()
+  if (!admin) {
+    redirect('/login')
+  }
+
   const supabase = await createServerSupabaseClient()
 
-  // Fetch user profiles with community memberships
-  const { data: profiles } = await supabase
+  // Build query for user profiles - filter by community memberships for community admins
+  let profilesQuery = supabase
     .from('profiles')
     .select(`
       *,
       universities(name),
-      countries(name)
+      countries(name),
+      community_members!inner(community_id)
     `)
+
+  // If community admin, only show users from their assigned communities
+  if (!isSuperAdmin(admin) && admin.assigned_communities && admin.assigned_communities.length > 0) {
+    profilesQuery = profilesQuery.in('community_members.community_id', admin.assigned_communities)
+  }
+
+  const { data: profiles } = await profilesQuery
     .order('created_at', { ascending: false })
     .limit(50)
 
-  // Fetch pending join applications
-  const { data: pendingRequests } = await supabase
+  // Build query for pending join applications - filter by community for community admins
+  let applicationsQuery = supabase
     .from('community_join_applications')
     .select(`
       *,
@@ -25,6 +42,13 @@ export default async function MembersPage() {
       profiles!community_join_applications_user_id_fkey(full_name, email)
     `)
     .eq('status', 'pending')
+
+  // If community admin, only show applications for their assigned communities
+  if (!isSuperAdmin(admin) && admin.assigned_communities && admin.assigned_communities.length > 0) {
+    applicationsQuery = applicationsQuery.in('community_id', admin.assigned_communities)
+  }
+
+  const { data: pendingRequests } = await applicationsQuery
     .order('requested_at', { ascending: false })
 
   return (

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseAdminClient } from '@/lib/supabase/server'
-import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
+import { validateAdminSession, logAdminActivity, isCommunityAdmin } from '@/lib/auth/auth-utils'
 import { z } from 'zod'
 
 const createCommunityWithApplicationSchema = z.object({
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Start a transaction-like operation
     // First, create the community
+    // Use a system user ID but track the admin who created it
     const systemUserId = '2e393a2a-30cc-42f4-b415-c2645fba0078' // Using an existing user as system user
 
     const { data: community, error: createError } = await supabase
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
         scope: data.scope,
         university_id: data.scope === 'global' ? null : data.university_id,
         creator_id: systemUserId,
+        created_by_admin_id: admin.id, // Track which admin created it
       })
       .select()
       .single()
@@ -151,9 +153,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Auto-assign community admin to their created community
+    if (isCommunityAdmin(admin)) {
+      const { error: assignError } = await supabase
+        .from('admin_community_assignments')
+        .insert({
+          admin_id: admin.id,
+          community_id: community.id,
+          assigned_by: admin.id // Self-assignment for created communities
+        })
+
+      if (assignError) {
+        console.error('Error auto-assigning community admin to created community:', assignError)
+        // Don't fail the creation, just log the error
+        // The community admin can be manually assigned later if needed
+      }
+    }
+
     // Log the activity
     await logAdminActivity(
-      admin.id,
       'community_created_with_application',
       'communities',
       community.id,

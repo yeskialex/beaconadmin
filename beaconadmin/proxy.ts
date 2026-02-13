@@ -10,7 +10,7 @@ export default async function proxy(request: NextRequest) {
     '/login',
     '/change-password',
     '/api/admin/change-password',
-    '/api/login',
+    '/api/auth/login',
     '/_next',
     '/favicon.ico',
     '/public'
@@ -69,7 +69,7 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/login (login endpoint)
+     * - api/auth/login (login endpoint)
      * - api/admin/change-password (password change endpoint)
      * - _next/static (static files)
      * - _next/image (image optimization files)
@@ -78,6 +78,6 @@ export const config = {
      * - login (login page)
      * - change-password (password change page)
      */
-    '/((?!api/login|api/admin/change-password|_next/static|_next/image|favicon.ico|public|login|change-password).*)',
+    '/((?!api/auth/login|api/admin/change-password|_next/static|_next/image|favicon.ico|public|login|change-password).*)',
   ],
 }

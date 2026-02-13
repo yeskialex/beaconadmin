@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
+import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
 export async function GET() {
   try {
@@ -15,13 +16,20 @@ export async function GET() {
 
     const supabase = await createServerSupabaseClient()
 
-    // Fetch posts with additional info
-    const { data: posts, error } = await supabase
+    // Build query - filter by assigned communities for community admins
+    let query = supabase
       .from('community_posts')
       .select(`
         *,
         communities(name)
       `)
+
+    // If community admin, only show posts from their assigned communities
+    if (!isSuperAdmin(admin) && admin.assigned_communities) {
+      query = query.in('community_id', admin.assigned_communities)
+    }
+
+    const { data: posts, error } = await query
       .order('created_at', { ascending: false })
 
     if (error) {

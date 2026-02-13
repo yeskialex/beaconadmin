@@ -1,20 +1,47 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { validateAdminSession } from '@/lib/auth/auth-utils'
+import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
+import { redirect } from 'next/navigation'
 import { Users, FileText, Calendar, Flag } from 'lucide-react'
 
 export default async function DashboardPage() {
+  // Validate admin session
+  const admin = await validateAdminSession()
+  if (!admin) {
+    redirect('/login')
+  }
+
   const supabase = await createServerSupabaseClient()
 
-  // Fetch stats
+  // Determine community filter for community admins
+  const communityFilter = !isSuperAdmin(admin) && admin.assigned_communities
+    ? admin.assigned_communities
+    : null
+
+  // Fetch stats with community filtering
+  let communitiesQuery = supabase.from('communities').select('id', { count: 'exact' })
+  let membersQuery = supabase.from('community_members').select('id', { count: 'exact' })
+  let postsQuery = supabase.from('community_posts').select('id', { count: 'exact' })
+  let eventsQuery = supabase.from('calendar_events').select('id', { count: 'exact' })
+
+  // Apply community filtering for community admins
+  if (communityFilter) {
+    communitiesQuery = communitiesQuery.in('id', communityFilter)
+    membersQuery = membersQuery.in('community_id', communityFilter)
+    postsQuery = postsQuery.in('community_id', communityFilter)
+    eventsQuery = eventsQuery.in('community_id', communityFilter)
+  }
+
   const [communitiesResult, membersResult, postsResult, eventsResult] = await Promise.all([
-    supabase.from('communities').select('id', { count: 'exact' }),
-    supabase.from('community_members').select('id', { count: 'exact' }),
-    supabase.from('community_posts').select('id', { count: 'exact' }),
-    supabase.from('calendar_events').select('id', { count: 'exact' })
+    communitiesQuery,
+    membersQuery,
+    postsQuery,
+    eventsQuery
   ])
 
   const stats = [
     {
-      name: 'Total Communities',
+      name: isSuperAdmin(admin) ? 'Total Communities' : 'My Communities',
       value: communitiesResult.count || 0,
       icon: Users,
       change: '+12%',
@@ -43,19 +70,25 @@ export default async function DashboardPage() {
     },
   ]
 
-  // Fetch recent communities
-  const { data: recentCommunities } = await supabase
+  // Fetch recent communities with filtering
+  let recentCommunitiesQuery = supabase
     .from('communities')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(5)
+
+  if (communityFilter) {
+    recentCommunitiesQuery = recentCommunitiesQuery.in('id', communityFilter)
+  }
+
+  const { data: recentCommunities } = await recentCommunitiesQuery
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Welcome back! Here's what's happening in your communities.
+          Welcome back{admin.full_name ? `, ${admin.full_name}` : ''}! Here's what's happening in {isSuperAdmin(admin) ? 'all communities' : 'your assigned communities'}.
         </p>
       </div>
 
@@ -85,9 +118,14 @@ export default async function DashboardPage() {
       <div className="mt-8">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Communities</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {isSuperAdmin(admin) ? 'Recent Communities' : 'My Recent Communities'}
+            </h2>
             <p className="mt-1 text-sm text-gray-600">
-              A list of the most recently created communities.
+              {isSuperAdmin(admin)
+                ? 'A list of the most recently created communities.'
+                : 'A list of your most recently created assigned communities.'
+              }
             </p>
           </div>
         </div>

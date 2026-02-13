@@ -117,7 +117,8 @@ export async function GET() {
       .from('communities')
       .select(`
         *,
-        universities(name)
+        universities(name),
+        admin_users!communities_created_by_admin_id_fkey(id, email, full_name, role)
       `)
 
     // Filter based on admin role
@@ -154,7 +155,15 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ communities: communities || [] })
+    // Transform communities to include proper creator display names
+    const transformedCommunities = (communities || []).map(community => ({
+      ...community,
+      creator_display_name: community.admin_users
+        ? (community.admin_users.role === 'community_admin' ? 'Community Admin' : 'Admin')
+        : 'System'
+    }))
+
+    return NextResponse.json({ communities: transformedCommunities })
   } catch (error) {
     console.error('Fetch communities error:', error)
     return NextResponse.json(

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Users, Settings, Eye, Mail, Calendar, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { Plus, Users, Settings, Eye, Mail, Calendar, CheckCircle, XCircle, AlertTriangle, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Community {
@@ -34,7 +34,9 @@ export default function AdminManagementPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedAdmin, setSelectedAdmin] = useState<CommunityAdmin | null>(null)
+  const [adminToDelete, setAdminToDelete] = useState<CommunityAdmin | null>(null)
   const [createdAdmin, setCreatedAdmin] = useState<any>(null)
 
   const [createForm, setCreateForm] = useState({
@@ -141,6 +143,39 @@ export default function AdminManagementPage() {
       community_ids: admin.admin_community_assignments.map(a => a.community_id)
     })
     setShowAssignModal(true)
+  }
+
+  const openDeleteModal = (admin: CommunityAdmin) => {
+    setAdminToDelete(admin)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteAdmin = async () => {
+    if (!adminToDelete) return
+
+    try {
+      const response = await fetch('/api/admin/community-admins', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ admin_id: adminToDelete.id })
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success(`Community admin "${adminToDelete.email}" has been deleted successfully`)
+        setShowDeleteModal(false)
+        setAdminToDelete(null)
+        await fetchData()
+      } else {
+        toast.error(result.error || 'Failed to delete community admin')
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error)
+      toast.error('An error occurred. Please try again.')
+    }
   }
 
   const getStatusBadge = (admin: CommunityAdmin) => {
@@ -279,6 +314,13 @@ export default function AdminManagementPage() {
                     >
                       <Settings className="h-3 w-3 mr-1" />
                       Manage
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(admin)}
+                      className="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -480,6 +522,80 @@ export default function AdminManagementPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && adminToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+
+              <h3 className="text-lg font-medium text-gray-900 text-center mb-4">Delete Community Admin</h3>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 text-center mb-3">
+                  Are you sure you want to delete this community admin account? This action cannot be undone.
+                </p>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {adminToDelete.full_name || adminToDelete.email}
+                      </p>
+                      <p className="text-xs text-gray-500">{adminToDelete.email}</p>
+                      {adminToDelete.admin_community_assignments.length > 0 && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          Currently assigned to {adminToDelete.admin_community_assignments.length} communit{adminToDelete.admin_community_assignments.length !== 1 ? 'ies' : 'y'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <div className="flex">
+                    <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-yellow-700">
+                      <p className="font-medium">This will permanently delete:</p>
+                      <ul className="mt-1 list-disc list-inside">
+                        <li>Admin account and login access</li>
+                        <li>All community assignments</li>
+                        <li>Active sessions</li>
+                        <li>Activity logs (optional)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setAdminToDelete(null)
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAdmin}
+                  className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-1 inline" />
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { validateAdminSession } from '@/lib/auth/auth-utils'
+import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
 export async function GET() {
   try {
@@ -15,14 +16,21 @@ export async function GET() {
 
     const supabase = await createServerSupabaseClient()
 
-    // Fetch events with additional info
-    const { data: events, error } = await supabase
+    // Build query - filter by assigned communities for community admins
+    let query = supabase
       .from('calendar_events')
       .select(`
         *,
         communities(name),
         event_categories(name, color_hex)
       `)
+
+    // If community admin, only show events from their assigned communities
+    if (!isSuperAdmin(admin) && admin.assigned_communities) {
+      query = query.in('community_id', admin.assigned_communities)
+    }
+
+    const { data: events, error } = await query
       .order('start_time', { ascending: true })
 
     if (error) {

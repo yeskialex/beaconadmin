@@ -117,26 +117,24 @@ export default function NewslettersPage() {
     }
   }
 
-  const uploadImage = async (file: File, bucket: string): Promise<string | null> => {
+  const uploadImage = async (file: File, type: 'image' | 'thumbnail'): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-      const filePath = `newsletters/${fileName}`
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
 
-      const { error: uploadError, data } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file)
+      const response = await fetch('/api/newsletters/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError)
-        throw uploadError
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image')
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath)
-
-      return publicUrl
+      return data.url
     } catch (error) {
       console.error('Error uploading image:', error)
       return null
@@ -153,7 +151,7 @@ export default function NewslettersPage() {
 
       // Upload images if new files were selected
       if (imageFile) {
-        const uploadedImageUrl = await uploadImage(imageFile, 'newsletter-images')
+        const uploadedImageUrl = await uploadImage(imageFile, 'image')
         if (uploadedImageUrl) {
           imageUrl = uploadedImageUrl
         } else {
@@ -164,7 +162,7 @@ export default function NewslettersPage() {
       }
 
       if (thumbnailFile) {
-        const uploadedThumbnailUrl = await uploadImage(thumbnailFile, 'newsletter-thumbnails')
+        const uploadedThumbnailUrl = await uploadImage(thumbnailFile, 'thumbnail')
         if (uploadedThumbnailUrl) {
           thumbnailUrl = uploadedThumbnailUrl
         } else {
@@ -640,7 +638,7 @@ export default function NewslettersPage() {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
@@ -650,7 +648,7 @@ export default function NewslettersPage() {
                     type="text"
                     value={formData.subtitle}
                     onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
@@ -660,7 +658,7 @@ export default function NewslettersPage() {
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     rows={6}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
@@ -670,7 +668,7 @@ export default function NewslettersPage() {
                     type="text"
                     value={formData.author_name}
                     onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
@@ -680,7 +678,7 @@ export default function NewslettersPage() {
                     type="text"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
@@ -691,7 +689,7 @@ export default function NewslettersPage() {
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                     placeholder="news, updates, community"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
                   />
                 </div>
 
