@@ -16,6 +16,7 @@ const communitySchema = z.object({
   cover_url: z.string().optional(),
   is_private: z.boolean(),
   is_active: z.boolean(),
+  is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
   // Application settings
@@ -43,9 +44,10 @@ interface CommunityFormWithApplicationProps {
     questions?: ApplicationQuestion[]
   }>
   isEditing?: boolean
+  isSuperAdmin?: boolean
 }
 
-export default function CommunityFormWithApplication({ initialData, isEditing = false }: CommunityFormWithApplicationProps) {
+export default function CommunityFormWithApplication({ initialData, isEditing = false, isSuperAdmin = false }: CommunityFormWithApplicationProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [universities, setUniversities] = useState<Array<{ id: string; name: string }>>([])
@@ -83,6 +85,7 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
       cover_url: initialData?.cover_url || '',
       is_private: initialData?.is_private || false,
       is_active: initialData?.is_active ?? true,
+      is_default: initialData?.is_default || false,
       scope: initialData?.scope || 'global',
       university_id: initialData?.university_id || '',
       join_description: initialData?.join_description || '',
@@ -489,6 +492,19 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                 Private Community (Requires approval to join)
               </label>
             </div>
+
+            {isSuperAdmin && (
+              <div className="flex items-center">
+                <input
+                  {...register('is_default')}
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">
+                  Default Community (Set as default for new users)
+                </label>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -699,6 +715,9 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
               <p className="text-sm text-gray-600 mt-1">Name: {watch('name')}</p>
               <p className="text-sm text-gray-600">Scope: {watch('scope')}</p>
               <p className="text-sm text-gray-600">Private: {watch('is_private') ? 'Yes' : 'No'}</p>
+              {isSuperAdmin && (
+                <p className="text-sm text-gray-600">Default Community: {watch('is_default') ? 'Yes' : 'No'}</p>
+              )}
             </div>
 
             <div>

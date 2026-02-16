@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import CommunityForm from '@/components/communities/CommunityForm'
+import CommunityFormWrapper from '@/components/communities/CommunityFormWrapper'
 import { toast } from 'sonner'
 
 export default function EditCommunityPage({ params }: { params: Promise<{ id: string }> }) {
@@ -69,7 +69,7 @@ export default function EditCommunityPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <CommunityForm initialData={community} isEditing={true} />
+          <CommunityFormWrapper initialData={community} isEditing={true} />
         </div>
       </div>
     </div>

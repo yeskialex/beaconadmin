@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseAdminClient } from '@/lib/supabase/server'
 import { validateAdminSession } from '@/lib/auth/auth-utils'
 import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
@@ -14,7 +14,7 @@ export async function GET() {
       )
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseAdminClient()
 
     // Build query - filter by assigned communities for community admins
     let query = supabase
@@ -26,9 +26,14 @@ export async function GET() {
       `)
 
     // If community admin, only show events from their assigned communities
-    if (!isSuperAdmin(admin) && admin.assigned_communities) {
+    // Super admins see ALL events (both community and personal events)
+    if (!isSuperAdmin(admin) && admin.assigned_communities && admin.assigned_communities.length > 0) {
       query = query.in('community_id', admin.assigned_communities)
+    } else if (!isSuperAdmin(admin)) {
+      // Community admin with no assigned communities - show no events
+      query = query.eq('id', 'no-match')
     }
+    // For super admin: no filtering, show all events
 
     const { data: events, error } = await query
       .order('start_time', { ascending: true })
@@ -58,10 +63,18 @@ export async function GET() {
         }))
 
         return NextResponse.json({ events: eventsWithProfiles })
+      } else {
+        // No creator IDs found, but we still have events - return them without profile data
+        const eventsWithProfiles = events.map(event => ({
+          ...event,
+          profiles: null
+        }))
+        return NextResponse.json({ events: eventsWithProfiles })
       }
     }
 
-    return NextResponse.json({ events })
+    // No events found
+    return NextResponse.json({ events: events || [] })
   } catch (error) {
     console.error('Fetch events error:', error)
     return NextResponse.json(

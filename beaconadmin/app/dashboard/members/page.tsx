@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseAdminClient } from '@/lib/supabase/server'
 import { validateAdminSession } from '@/lib/auth/auth-utils'
 import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
 import { redirect } from 'next/navigation'
@@ -12,26 +12,84 @@ export default async function MembersPage() {
     redirect('/login')
   }
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseAdminClient()
+
+  // Debug: Check what communities are assigned to this admin
+  console.log('Admin details:', {
+    id: admin.id,
+    email: admin.email,
+    role: admin.role,
+    assigned_communities: admin.assigned_communities
+  })
 
   // Build query for user profiles - filter by community memberships for community admins
-  let profilesQuery = supabase
-    .from('profiles')
-    .select(`
-      *,
-      universities(name),
-      countries(name),
-      community_members!inner(community_id)
-    `)
+  let profilesQuery: any
 
-  // If community admin, only show users from their assigned communities
-  if (!isSuperAdmin(admin) && admin.assigned_communities && admin.assigned_communities.length > 0) {
-    profilesQuery = profilesQuery.in('community_members.community_id', admin.assigned_communities)
+  if (isSuperAdmin(admin)) {
+    // Super admin: show ALL users regardless of community membership
+    profilesQuery = supabase
+      .from('profiles')
+      .select(`
+        *,
+        universities(name),
+        countries(name)
+      `)
+  } else if (admin.assigned_communities && admin.assigned_communities.length > 0) {
+    // Community admin: only show users from their assigned communities
+    // First get all member IDs from the assigned communities
+    const { data: communityMembers } = await supabase
+      .from('community_members')
+      .select('user_id')
+      .in('community_id', admin.assigned_communities)
+
+    const memberIds = communityMembers?.map(m => m.user_id) || []
+
+    console.log('Community members found:', {
+      communityIds: admin.assigned_communities,
+      memberCount: memberIds.length,
+      sampleMemberIds: memberIds.slice(0, 5)
+    })
+
+    if (memberIds.length > 0) {
+      profilesQuery = supabase
+        .from('profiles')
+        .select(`
+          *,
+          universities(name),
+          countries(name)
+        `)
+        .in('id', memberIds)
+    } else {
+      // No members found in assigned communities
+      profilesQuery = supabase
+        .from('profiles')
+        .select(`
+          *,
+          universities(name),
+          countries(name)
+        `)
+        .eq('id', 'no-match')
+    }
+  } else {
+    // No assigned communities: show no users
+    profilesQuery = supabase
+      .from('profiles')
+      .select(`
+        *,
+        universities(name),
+        countries(name)
+      `)
+      .eq('id', 'no-match') // This ensures no results
   }
 
-  const { data: profiles } = await profilesQuery
+  const { data: profiles, error: profilesError } = await profilesQuery
     .order('created_at', { ascending: false })
     .limit(50)
+
+  console.log('Profiles query result:', {
+    count: profiles?.length || 0,
+    error: profilesError?.message
+  })
 
   // Build query for pending join applications - filter by community for community admins
   let applicationsQuery = supabase

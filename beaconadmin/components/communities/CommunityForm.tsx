@@ -17,6 +17,7 @@ const communitySchema = z.object({
   cover_url: z.string().optional(),
   is_private: z.boolean(),
   is_active: z.boolean(),
+  is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
 })
@@ -26,9 +27,10 @@ type CommunityFormData = z.infer<typeof communitySchema>
 interface CommunityFormProps {
   initialData?: Partial<CommunityFormData & { id: string }>
   isEditing?: boolean
+  isSuperAdmin?: boolean
 }
 
-export default function CommunityForm({ initialData, isEditing = false }: CommunityFormProps) {
+export default function CommunityForm({ initialData, isEditing = false, isSuperAdmin = false }: CommunityFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [universities, setUniversities] = useState<Array<{ id: string; name: string }>>([])
@@ -55,6 +57,7 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
       cover_url: initialData?.cover_url || '',
       is_private: initialData?.is_private || false,
       is_active: initialData?.is_active ?? true,
+      is_default: initialData?.is_default || false,
       scope: initialData?.scope || 'global',
       university_id: initialData?.university_id || '',
     },
@@ -381,6 +384,19 @@ export default function CommunityForm({ initialData, isEditing = false }: Commun
             Active Community
           </label>
         </div>
+
+        {isSuperAdmin && (
+          <div className="flex items-center">
+            <input
+              {...register('is_default')}
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="is_default" className="ml-2 block text-sm text-gray-900">
+              Default Community (Set as default for new users)
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Application Settings - Show for existing communities or after creating new one */}

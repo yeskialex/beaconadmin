@@ -1,4 +1,4 @@
-import CommunityFormWithApplication from '@/components/communities/CommunityFormWithApplication'
+import CommunityFormWithApplicationWrapper from '@/components/communities/CommunityFormWithApplicationWrapper'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
@@ -20,7 +20,7 @@ export default function NewCommunityPage() {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <CommunityFormWithApplication />
+        <CommunityFormWithApplicationWrapper />
       </div>
     </div>
   )

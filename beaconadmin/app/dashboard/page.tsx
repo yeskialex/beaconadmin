@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseAdminClient } from '@/lib/supabase/server'
 import { validateAdminSession } from '@/lib/auth/auth-utils'
 import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
 import { redirect } from 'next/navigation'
@@ -11,7 +11,7 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseAdminClient()
 
   // Determine community filter for community admins
   const communityFilter = !isSuperAdmin(admin) && admin.assigned_communities
@@ -24,12 +24,15 @@ export default async function DashboardPage() {
   let postsQuery = supabase.from('community_posts').select('id', { count: 'exact' })
   let eventsQuery = supabase.from('calendar_events').select('id', { count: 'exact' })
 
-  // Apply community filtering for community admins
+  // Apply community filtering only for community admins (not super admins)
   if (communityFilter) {
     communitiesQuery = communitiesQuery.in('id', communityFilter)
     membersQuery = membersQuery.in('community_id', communityFilter)
     postsQuery = postsQuery.in('community_id', communityFilter)
     eventsQuery = eventsQuery.in('community_id', communityFilter)
+  } else if (isSuperAdmin(admin)) {
+    // For super admins, count all members and all events (no filtering needed)
+    // The queries are already set up correctly above
   }
 
   const [communitiesResult, membersResult, postsResult, eventsResult] = await Promise.all([

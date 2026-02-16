@@ -10,6 +10,7 @@ const createCommunitySchema = z.object({
   cover_url: z.string().optional(),
   is_private: z.boolean(),
   is_active: z.boolean(),
+  is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
 })

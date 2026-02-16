@@ -11,6 +11,7 @@ const createCommunityWithApplicationSchema = z.object({
   cover_url: z.string().optional(),
   is_private: z.boolean(),
   is_active: z.boolean(),
+  is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
   // Join page info
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
         cover_url: data.cover_url || null,
         is_private: data.is_private,
         is_active: data.is_active,
+        is_default: data.is_default,
         scope: data.scope,
         university_id: data.scope === 'global' ? null : data.university_id,
         creator_id: systemUserId,

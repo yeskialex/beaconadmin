@@ -115,16 +115,22 @@ export async function logAdminActivity(
 ) {
   const supabase = await createServerSupabaseAdminClient()
   const admin = await validateAdminSession()
-  
+
   if (!admin) return
 
-  await supabase.from('admin_activity_logs').insert({
+  const { error } = await supabase.from('admin_activity_logs').insert({
     admin_user_id: admin.id,
     action,
-    entity_type: entityType,
-    entity_id: entityId,
-    details
+    entity_type: entityType || null,
+    entity_id: entityId || null,
+    details: details || null
   })
+
+  if (error) {
+    console.error('Failed to log admin activity:', error)
+    console.error('Params:', { action, entityType, entityId, details, admin_id: admin.id })
+    // Don't throw - just log the error
+  }
 }
 
 export async function logout() {

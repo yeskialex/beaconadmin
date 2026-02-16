@@ -75,7 +75,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   className="pl-10 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="admin@beacon.app"
+                  placeholder="email"
                 />
               </div>
               {errors.email && (

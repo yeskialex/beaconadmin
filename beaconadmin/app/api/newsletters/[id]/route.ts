@@ -77,7 +77,7 @@ export async function PATCH(
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'update_newsletter', 'newsletter', params.id, {
+    await logAdminActivity('update_newsletter', 'newsletter', params.id, {
       changes: Object.keys(body)
     })
 
@@ -122,7 +122,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'delete_newsletter', 'newsletter', params.id, {
+    await logAdminActivity('delete_newsletter', 'newsletter', params.id, {
       title: newsletter?.title
     })
 

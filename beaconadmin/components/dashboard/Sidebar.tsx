@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -14,6 +15,11 @@ import {
   Settings,
   Image,
   Bell,
+  ScrollText,
+  ClipboardList,
+  ChevronDown,
+  Key,
+  User,
 } from 'lucide-react'
 import { AdminUser, isSuperAdmin } from '@/lib/auth/client-auth-utils'
 
@@ -25,6 +31,7 @@ interface SidebarProps {
 const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Communities', href: '/dashboard/communities', icon: Users },
+  { name: 'Applications', href: '/dashboard/applications', icon: ClipboardList },
   { name: 'Members', href: '/dashboard/members', icon: Shield },
   { name: 'Posts', href: '/dashboard/posts', icon: FileText },
   { name: 'Events', href: '/dashboard/events', icon: Calendar },
@@ -36,11 +43,13 @@ const baseNavigation = [
 const superAdminNavigation = [
   { name: 'Banners', href: '/dashboard/banners', icon: Image },
   { name: 'Newsletters', href: '/dashboard/newsletters', icon: Mail },
+  { name: 'Terms & Conditions', href: '/dashboard/terms-conditions', icon: ScrollText },
   { name: 'Admin Management', href: '/dashboard/admin-management', icon: Settings },
 ]
 
 export default function Sidebar({ admin }: SidebarProps) {
   const pathname = usePathname()
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   // Build navigation based on admin role
   const navigation = isSuperAdmin(admin)
@@ -84,19 +93,43 @@ export default function Sidebar({ admin }: SidebarProps) {
             })}
           </nav>
         </div>
-        <div className="flex flex-shrink-0 border-t border-gray-800 p-4">
-          <div className="flex items-center w-full">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">{admin.full_name || admin.email}</p>
-              <p className="text-xs text-gray-400">{admin.role}</p>
-            </div>
+        <div className="flex flex-shrink-0 border-t border-gray-800">
+          <div className="relative w-full">
             <button
-              onClick={handleLogout}
-              className="ml-3 text-gray-400 hover:text-white transition-colors"
-              title="Logout"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center w-full p-4 text-left hover:bg-gray-800 transition-colors"
             >
-              <LogOut className="h-5 w-5" />
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center">
+                  <User className="h-4 w-4 text-gray-300" />
+                </div>
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-white">{admin.full_name || admin.email}</p>
+                <p className="text-xs text-gray-400">{admin.role}</p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
             </button>
+
+            {showUserMenu && (
+              <div className="absolute bottom-full left-0 right-0 bg-gray-800 border-t border-gray-700 shadow-lg">
+                <Link
+                  href="/dashboard/settings/change-password"
+                  className="flex items-center px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <Key className="h-4 w-4 mr-3" />
+                  Change Password
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

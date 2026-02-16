@@ -17,7 +17,23 @@ export default function EventsPage() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/events')
+      const response = await fetch('/api/events', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (!response.ok) {
+        console.error('Failed to fetch events:', response.status, response.statusText)
+        if (response.status === 401) {
+          // Redirect to login if unauthorized
+          window.location.href = '/login'
+          return
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       const data = await response.json()
 
       if (data.events) {
@@ -31,9 +47,13 @@ export default function EventsPage() {
         const privateEvents = data.events.filter(event => event.is_private).length
 
         setStats({ total, upcoming, community, private: privateEvents })
+      } else {
+        console.log('No events in response')
+        setEvents([])
       }
     } catch (error) {
       console.error('Error fetching events:', error)
+      setEvents([])
     } finally {
       setLoading(false)
     }

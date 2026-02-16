@@ -54,17 +54,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseAdminClient()
     const body = await request.json()
 
-    // Get admin's profile if exists
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', admin.email)
-      .single()
 
     // Prepare newsletter data
     const newsletterData = {
       ...body,
-      created_by: profile?.id,
       published_at: body.is_published ? new Date().toISOString() : null
     }
 
@@ -81,9 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'create_newsletter', 'newsletter', newsletter.id, {
-      title: newsletter.title
-    })
+    await logAdminActivity('create_newsletter', 'newsletter', newsletter.id)
 
     return NextResponse.json({ newsletter })
   } catch (error) {
