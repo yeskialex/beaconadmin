@@ -177,7 +177,7 @@ export default function BannersPage() {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
-                            e.currentTarget.nextElementSibling!.style.display = 'flex'
+                            const nextElement = e.currentTarget.nextElementSibling as HTMLElement; if (nextElement) nextElement.style.display = 'flex'
                           }}
                         />
                         <div
@@ -229,7 +229,7 @@ export default function BannersPage() {
                       <Link
                         href={`/dashboard/banners/${banner.id}/edit`}
                         className="text-gray-400 hover:text-gray-600 p-2 rounded-md hover:bg-gray-50 transition-colors"
-                        title="Edit banner"
+                       
                       >
                         <Edit className="h-4 w-4" />
                       </Link>
@@ -237,7 +237,7 @@ export default function BannersPage() {
                       <button
                         onClick={() => handleDelete(banner.id, banner.title)}
                         className="text-red-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors"
-                        title="Delete banner"
+                       
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

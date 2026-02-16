@@ -21,7 +21,7 @@ export default async function ReportsPage() {
   const stats = {
     total: statsData?.length || 0,
     pending: statsData?.filter(r => r.status === 'pending').length || 0,
-    reviewing: statsData?.filter(r => r.status === 'reviewing').length || 0,
+    reviewing: statsData?.filter(r => r.status === 'reviewed').length || 0,
     resolved: statsData?.filter(r => r.status === 'resolved').length || 0,
     dismissed: statsData?.filter(r => r.status === 'dismissed').length || 0,
   }
@@ -30,7 +30,7 @@ export default async function ReportsPage() {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800'
-      case 'reviewing':
+      case 'reviewed':
         return 'bg-blue-100 text-blue-800'
       case 'resolved':
         return 'bg-green-100 text-green-800'
@@ -45,7 +45,7 @@ export default async function ReportsPage() {
     switch (status) {
       case 'pending':
         return Clock
-      case 'reviewing':
+      case 'reviewed':
         return AlertTriangle
       case 'resolved':
         return CheckCircle
@@ -249,10 +249,10 @@ export default async function ReportsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 text-gray-400 mr-1" />
-                            {new Date(report.created_at).toLocaleDateString()}
+                            {new Date(report.created_at || Date.now()).toLocaleDateString()}
                           </div>
                           <div className="text-xs text-gray-400">
-                            {new Date(report.created_at).toLocaleTimeString()}
+                            {new Date(report.created_at || Date.now()).toLocaleTimeString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

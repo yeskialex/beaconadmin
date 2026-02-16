@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default function EventsPage() {
   const router = useRouter()
-  const [events, setEvents] = useState([])
+  const [events, setEvents] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, upcoming: 0, community: 0, private: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -42,9 +42,9 @@ export default function EventsPage() {
         // Calculate stats from the data
         const now = new Date()
         const total = data.events.length
-        const upcoming = data.events.filter(event => new Date(event.start_time) > now).length
-        const community = data.events.filter(event => event.is_community_event).length
-        const privateEvents = data.events.filter(event => event.is_private).length
+        const upcoming = data.events.filter((event: any) => new Date(event.start_time) > now).length
+        const community = data.events.filter((event: any) => event.is_community_event).length
+        const privateEvents = data.events.filter((event: any) => event.is_private).length
 
         setStats({ total, upcoming, community, private: privateEvents })
       } else {
@@ -316,21 +316,21 @@ export default function EventsPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="View Details"
+                           
                             onClick={() => router.push(`/dashboard/events/${event.id}`)}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
                             className="text-yellow-600 hover:text-yellow-900 transition-colors"
-                            title="Edit"
+                           
                             onClick={() => alert('Edit event functionality coming soon')}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             className="text-red-600 hover:text-red-900 transition-colors"
-                            title="Delete"
+                           
                             onClick={() => deleteEvent(event.id, event.title)}
                           >
                             <Trash2 className="h-4 w-4" />

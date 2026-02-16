@@ -1,113 +1,39 @@
-import { createServerSupabaseAdminClient } from '@/lib/supabase/server'
-import { validateAdminSession } from '@/lib/auth/auth-utils'
-import { isSuperAdmin } from '@/lib/auth/client-auth-utils'
-import { redirect } from 'next/navigation'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { Users, Mail, Calendar, Check, X } from 'lucide-react'
-import Link from 'next/link'
 
 export default async function MembersPage() {
-  // Validate admin session
-  const admin = await validateAdminSession()
-  if (!admin) {
-    redirect('/login')
-  }
+  const supabase = await createServerSupabaseClient()
 
-  const supabase = await createServerSupabaseAdminClient()
-
-  // Debug: Check what communities are assigned to this admin
-  console.log('Admin details:', {
-    id: admin.id,
-    email: admin.email,
-    role: admin.role,
-    assigned_communities: admin.assigned_communities
-  })
-
-  // Build query for user profiles - filter by community memberships for community admins
-  let profilesQuery: any
-
-  if (isSuperAdmin(admin)) {
-    // Super admin: show ALL users regardless of community membership
-    profilesQuery = supabase
-      .from('profiles')
-      .select(`
-        *,
-        universities(name),
-        countries(name)
-      `)
-  } else if (admin.assigned_communities && admin.assigned_communities.length > 0) {
-    // Community admin: only show users from their assigned communities
-    // First get all member IDs from the assigned communities
-    const { data: communityMembers } = await supabase
-      .from('community_members')
-      .select('user_id')
-      .in('community_id', admin.assigned_communities)
-
-    const memberIds = communityMembers?.map(m => m.user_id) || []
-
-    console.log('Community members found:', {
-      communityIds: admin.assigned_communities,
-      memberCount: memberIds.length,
-      sampleMemberIds: memberIds.slice(0, 5)
-    })
-
-    if (memberIds.length > 0) {
-      profilesQuery = supabase
-        .from('profiles')
-        .select(`
-          *,
-          universities(name),
-          countries(name)
-        `)
-        .in('id', memberIds)
-    } else {
-      // No members found in assigned communities
-      profilesQuery = supabase
-        .from('profiles')
-        .select(`
-          *,
-          universities(name),
-          countries(name)
-        `)
-        .eq('id', 'no-match')
-    }
-  } else {
-    // No assigned communities: show no users
-    profilesQuery = supabase
-      .from('profiles')
-      .select(`
-        *,
-        universities(name),
-        countries(name)
-      `)
-      .eq('id', 'no-match') // This ensures no results
-  }
-
-  const { data: profiles, error: profilesError } = await profilesQuery
+  // Fetch user profiles with community memberships
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      universities(name),
+      countries(name)
+    `)
     .order('created_at', { ascending: false })
     .limit(50)
 
-  console.log('Profiles query result:', {
-    count: profiles?.length || 0,
-    error: profilesError?.message
-  })
-
-  // Build query for pending join applications - filter by community for community admins
-  let applicationsQuery = supabase
+  // Fetch pending join applications
+  const { data: pendingRequests } = await supabase
     .from('community_join_applications')
     .select(`
       *,
-      communities(name),
-      profiles!community_join_applications_user_id_fkey(full_name, email)
+      communities(name)
     `)
     .eq('status', 'pending')
-
-  // If community admin, only show applications for their assigned communities
-  if (!isSuperAdmin(admin) && admin.assigned_communities && admin.assigned_communities.length > 0) {
-    applicationsQuery = applicationsQuery.in('community_id', admin.assigned_communities)
-  }
-
-  const { data: pendingRequests } = await applicationsQuery
     .order('requested_at', { ascending: false })
+
+  // Fetch user profiles for pending requests
+  const userIds = pendingRequests?.map(req => req.user_id) || []
+  const { data: requestUsers } = userIds.length > 0 ? await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', userIds) : { data: [] }
+
+  // Create a map of user data
+  const userMap = new Map(requestUsers?.map(user => [user.id, user]) || [])
 
   return (
     <div className="space-y-8">
@@ -152,7 +78,7 @@ export default async function MembersPage() {
                     Verified Users
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {profiles?.filter(p => p.verification_status === 'verified').length || 0}
+                    {profiles?.filter((p: any) => p.verification_status === 'verified').length || 0}
                   </dd>
                 </dl>
               </div>
@@ -192,16 +118,11 @@ export default async function MembersPage() {
                   <div className="flex items-center space-x-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {request.profiles?.full_name || request.profiles?.email}
+                        {userMap.get(request.user_id)?.full_name || userMap.get(request.user_id)?.email || 'Unknown User'}
                       </p>
                       <p className="text-sm text-gray-500">
                         wants to join <span className="font-medium">{request.communities?.name}</span>
                       </p>
-                      {request.message && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          Message: "{request.message}"
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -298,12 +219,9 @@ export default async function MembersPage() {
                       {new Date(profile.created_at!).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        href={`/dashboard/users/${profile.id}`}
-                        className="text-blue-600 hover:text-blue-900 transition-colors"
-                      >
+                      <button className="text-blue-600 hover:text-blue-900">
                         View
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 )) ?? []}

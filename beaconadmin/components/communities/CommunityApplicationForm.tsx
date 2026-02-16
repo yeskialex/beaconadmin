@@ -9,9 +9,9 @@ interface ApplicationQuestion {
   id?: string
   question_text: string
   question_order: number
-  is_required: boolean
-  placeholder_text?: string
-  max_length: number
+  is_required: boolean | null
+  placeholder_text?: string | null
+  max_length: number | null
 }
 
 interface CommunityApplicationFormProps {
@@ -577,7 +577,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                           </label>
                           <input
                             type="number"
-                            value={question.max_length}
+                            value={question.max_length || 250}
                             onChange={(e) => updateQuestion(index, 'max_length', parseInt(e.target.value))}
                             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm text-black placeholder-gray-600"
                             min="50"
@@ -589,7 +589,7 @@ export default function CommunityApplicationForm({ communityId, isEditing = fals
                       <label className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={question.is_required}
+                          checked={question.is_required || false}
                           onChange={(e) => updateQuestion(index, 'is_required', e.target.checked)}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />

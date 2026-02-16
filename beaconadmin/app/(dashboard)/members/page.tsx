@@ -20,11 +20,20 @@ export default async function MembersPage() {
     .from('community_join_applications')
     .select(`
       *,
-      communities(name),
-      profiles!community_join_applications_user_id_fkey(full_name, email)
+      communities(name)
     `)
     .eq('status', 'pending')
     .order('requested_at', { ascending: false })
+
+  // Fetch user profiles for pending requests
+  const userIds = pendingRequests?.map(req => req.user_id) || []
+  const { data: requestUsers } = userIds.length > 0 ? await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', userIds) : { data: [] }
+
+  // Create a map of user data
+  const userMap = new Map(requestUsers?.map(user => [user.id, user]) || [])
 
   return (
     <div className="space-y-8">
@@ -69,7 +78,7 @@ export default async function MembersPage() {
                     Verified Users
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {profiles?.filter(p => p.verification_status === 'verified').length || 0}
+                    {profiles?.filter((p: any) => p.verification_status === 'verified').length || 0}
                   </dd>
                 </dl>
               </div>
@@ -109,16 +118,11 @@ export default async function MembersPage() {
                   <div className="flex items-center space-x-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {request.profiles?.full_name || request.profiles?.email}
+                        {userMap.get(request.user_id)?.full_name || userMap.get(request.user_id)?.email || 'Unknown User'}
                       </p>
                       <p className="text-sm text-gray-500">
                         wants to join <span className="font-medium">{request.communities?.name}</span>
                       </p>
-                      {request.message && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          Message: "{request.message}"
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

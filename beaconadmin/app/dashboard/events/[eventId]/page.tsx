@@ -168,9 +168,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                 <div className="flex items-center space-x-2 mb-2">
                   <h2 className="text-2xl font-bold text-black">{event.title}</h2>
                   {event.is_private ? (
-                    <Lock className="h-5 w-5 text-gray-500" title="Private Event" />
+                    <Lock className="h-5 w-5 text-gray-500" />
                   ) : (
-                    <Globe className="h-5 w-5 text-green-500" title="Public Event" />
+                    <Globe className="h-5 w-5 text-green-500" />
                   )}
                 </div>
 
@@ -238,7 +238,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
-                  title="Delete event"
+                 
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

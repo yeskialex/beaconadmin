@@ -570,14 +570,14 @@ export default function NewslettersPage() {
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="View Details"
+                         
                           onClick={() => router.push(`/dashboard/newsletters/${newsletter.id}`)}
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                          title="Edit"
+                         
                           onClick={() => openEditModal(newsletter)}
                         >
                           <Edit className="h-4 w-4" />
@@ -598,7 +598,7 @@ export default function NewslettersPage() {
                         </button>
                         <button
                           className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete"
+                         
                           onClick={() => deleteNewsletter(newsletter.id, newsletter.title)}
                         >
                           <Trash2 className="h-4 w-4" />

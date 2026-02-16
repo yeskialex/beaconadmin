@@ -36,7 +36,7 @@ export async function POST(
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'reject_application', 'community_join_application', resolvedParams.applicationId, {
+    await logAdminActivity('reject_application', 'community_join_application', resolvedParams.applicationId, {
       community_id: resolvedParams.id,
       rejection_reason: rejection_reason
     })

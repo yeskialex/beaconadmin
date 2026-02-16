@@ -53,7 +53,6 @@ export async function GET(
       email: authUserData?.email || profile?.email || 'Unknown',
       full_name: profile?.full_name || authUserData?.user_metadata?.full_name || 'Unknown User',
       avatar_url: profile?.avatar_url || authUserData?.user_metadata?.avatar_url || null,
-      bio: profile?.bio || null,
       created_at: profile?.created_at || authUserData?.user_metadata?.created_at || new Date().toISOString()
     }
 

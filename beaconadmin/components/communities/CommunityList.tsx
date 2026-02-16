@@ -5,9 +5,9 @@ import { Edit, Trash2, Users, Eye, Plus, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CommunityList() {
-  const [communities, setCommunities] = useState([])
+  const [communities, setCommunities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchCommunities()
@@ -196,27 +196,27 @@ export default function CommunityList() {
                     <Link
                       href={`/dashboard/communities/${community.id}`}
                       className="text-blue-600 hover:text-blue-900 transition-colors"
-                      title="View Details"
+                     
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
                     <Link
                       href={`/dashboard/communities/${community.id}/applications`}
                       className="text-green-600 hover:text-green-900 transition-colors"
-                      title="Applications"
+                     
                     >
                       <FileText className="h-4 w-4" />
                     </Link>
                     <Link
                       href={`/dashboard/communities/${community.id}/edit`}
                       className="text-yellow-600 hover:text-yellow-900 transition-colors"
-                      title="Edit"
+                     
                     >
                       <Edit className="h-4 w-4" />
                     </Link>
                     <button
                       className="text-red-600 hover:text-red-900 transition-colors"
-                      title="Delete Community (Cascading)"
+                     
                       onClick={() => deleteCommunity(community.id, community.name)}
                     >
                       <Trash2 className="h-4 w-4" />

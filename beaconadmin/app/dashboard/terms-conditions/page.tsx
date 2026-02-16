@@ -397,7 +397,7 @@ export default function TermsConditionsPage() {
                     <button
                       onClick={() => updateDisplayOrder(terms.id, terms.display_order - 1)}
                       className="p-1 text-gray-400 hover:text-gray-600"
-                      title="Move up"
+                     
                     >
                       <ChevronUp className="h-4 w-4" />
                     </button>
@@ -407,7 +407,7 @@ export default function TermsConditionsPage() {
                     <button
                       onClick={() => updateDisplayOrder(terms.id, terms.display_order + 1)}
                       className="p-1 text-gray-400 hover:text-gray-600"
-                      title="Move down"
+                     
                     >
                       <ChevronDown className="h-4 w-4" />
                     </button>

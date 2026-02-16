@@ -6,7 +6,7 @@ import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share } from '
 
 export default function PostsPage() {
   const router = useRouter()
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, official: 0, pinned: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -24,8 +24,8 @@ export default function PostsPage() {
 
         // Calculate stats from the data
         const total = data.posts.length
-        const official = data.posts.filter(post => post.is_official).length
-        const pinned = data.posts.filter(post => post.is_pinned).length
+        const official = data.posts.filter((post: any) => post.is_official).length
+        const pinned = data.posts.filter((post: any) => post.is_pinned).length
 
         setStats({ total, official, pinned })
       }
@@ -48,7 +48,7 @@ export default function PostsPage() {
 
       if (response.ok) {
         // Remove post from local state
-        setPosts(prev => prev.filter(post => post.id !== postId))
+        setPosts(prev => prev.filter((post: any) => post.id !== postId))
 
         // Update stats
         const deletedPost = posts.find(p => p.id === postId)
@@ -297,7 +297,7 @@ export default function PostsPage() {
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="View Details"
+                         
                           onClick={() => router.push(`/dashboard/posts/${post.id}`)}
                         >
                           <Eye className="h-4 w-4" />
@@ -311,7 +311,7 @@ export default function PostsPage() {
                         </button>
                         <button
                           className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete"
+                         
                           onClick={() => deletePost(post.id, post.title || post.content?.slice(0, 50))}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -387,7 +387,7 @@ export default function NoticesPage() {
                     <button
                       onClick={() => openEditModal(notice)}
                       className="text-blue-600 hover:text-blue-900 p-2 rounded-md hover:bg-blue-50 transition-colors"
-                      title="Edit notice"
+                     
                     >
                       <Edit className="h-4 w-4" />
                     </button>
@@ -395,7 +395,7 @@ export default function NoticesPage() {
                     <button
                       onClick={() => handleDelete(notice)}
                       className="text-red-600 hover:text-red-900 p-2 rounded-md hover:bg-red-50 transition-colors"
-                      title="Delete notice"
+                     
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

@@ -52,7 +52,7 @@ export async function POST(
     }
 
     // Log activity
-    await logAdminActivity(admin.id, 'approve_application', 'community_join_application', resolvedParams.applicationId, {
+    await logAdminActivity('approve_application', 'community_join_application', resolvedParams.applicationId, {
       community_id: resolvedParams.id,
       user_id: userId
     })

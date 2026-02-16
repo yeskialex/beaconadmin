@@ -248,7 +248,8 @@ export default function EditBannerPage({ params }: { params: { id: string } }) {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
-                      e.currentTarget.nextElementSibling!.style.display = 'flex'
+                      const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                      if (nextElement) nextElement.style.display = 'flex'
                     }}
                   />
                   <div

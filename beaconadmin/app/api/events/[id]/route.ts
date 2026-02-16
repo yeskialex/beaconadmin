@@ -79,11 +79,11 @@ export async function GET(
       }
     }
 
-    // Fetch event attendees (if there's an event_attendees table)
-    let attendees = []
+    // Fetch event participants
+    let attendees: any[] = []
     try {
       const { data: attendeesData } = await supabase
-        .from('event_attendees')
+        .from('event_participants')
         .select(`
           id,
           user_id,
@@ -97,8 +97,9 @@ export async function GET(
         attendees = await Promise.all(
           attendeesData.map(async (attendee) => {
             let userData = null
-            try {
-              const { data: authData } = await supabase.auth.admin.getUserById(attendee.user_id)
+            if (attendee.user_id) {
+              try {
+                const { data: authData } = await supabase.auth.admin.getUserById(attendee.user_id)
               if (authData?.user) {
                 userData = {
                   id: attendee.user_id,
@@ -106,18 +107,19 @@ export async function GET(
                   avatar_url: authData.user.user_metadata?.avatar_url
                 }
               }
-            } catch (err) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url')
-                .eq('id', attendee.user_id)
-                .single()
+              } catch (err) {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('full_name, avatar_url')
+                  .eq('id', attendee.user_id)
+                  .single()
 
-              if (profile) {
-                userData = {
-                  id: attendee.user_id,
-                  full_name: profile.full_name || 'Unknown User',
-                  avatar_url: profile.avatar_url
+                if (profile) {
+                  userData = {
+                    id: attendee.user_id,
+                    full_name: profile.full_name || 'Unknown User',
+                    avatar_url: profile.avatar_url
+                  }
                 }
               }
             }

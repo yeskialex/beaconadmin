@@ -232,7 +232,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
-                  title="Delete post"
+                 
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

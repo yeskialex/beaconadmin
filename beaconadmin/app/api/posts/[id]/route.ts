@@ -86,7 +86,7 @@ export async function GET(
         id,
         content,
         created_at,
-        user_id
+        author_id
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
@@ -96,10 +96,10 @@ export async function GET(
       (comments || []).map(async (comment) => {
         let commentAuthor = null
         try {
-          const { data: authData } = await supabase.auth.admin.getUserById(comment.user_id)
+          const { data: authData } = await supabase.auth.admin.getUserById(comment.author_id)
           if (authData?.user) {
             commentAuthor = {
-              id: comment.user_id,
+              id: comment.author_id,
               full_name: authData.user.user_metadata?.full_name || 'Unknown User',
               avatar_url: authData.user.user_metadata?.avatar_url
             }
@@ -109,12 +109,12 @@ export async function GET(
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, avatar_url')
-            .eq('id', comment.user_id)
+            .eq('id', comment.author_id)
             .single()
 
           if (profile) {
             commentAuthor = {
-              id: comment.user_id,
+              id: comment.author_id,
               full_name: profile.full_name || 'Unknown User',
               avatar_url: profile.avatar_url
             }
@@ -124,7 +124,7 @@ export async function GET(
         return {
           ...comment,
           author: commentAuthor || {
-            id: comment.user_id,
+            id: comment.author_id,
             full_name: 'Unknown User',
             avatar_url: null
           }

@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validationResult = createNoticeSchema.safeParse(body)
     if (!validationResult.success) {
-      console.error('Validation failed:', validationResult.error.errors)
+      console.error('Validation failed:', validationResult.error.issues)
       return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.errors },
+        { error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       )
     }

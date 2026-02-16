@@ -8,6 +8,8 @@ export type {
   AdminUser
 } from './client-auth-utils'
 
+import type { AdminUser } from './client-auth-utils'
+
 export {
   isSuperAdmin,
   isCommunityAdmin,
