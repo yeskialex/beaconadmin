@@ -13,7 +13,7 @@ const updateBannerSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -33,6 +33,7 @@ export async function GET(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     const { data: banner, error } = await supabase
@@ -41,7 +42,7 @@ export async function GET(
         *,
         admin_users!banners_created_by_fkey(full_name, email)
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -64,7 +65,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -84,6 +85,7 @@ export async function PUT(
       )
     }
 
+    const resolvedParams = await params
     const body = await request.json()
 
     // Validate input
@@ -102,7 +104,7 @@ export async function PUT(
     const { data: existingBanner, error: fetchError } = await supabase
       .from('banners')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError) {
@@ -118,7 +120,7 @@ export async function PUT(
     const { data: banner, error: updateError } = await supabase
       .from('banners')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single()
 
@@ -150,7 +152,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -170,13 +172,14 @@ export async function DELETE(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     // Check if banner exists
     const { data: existingBanner, error: fetchError } = await supabase
       .from('banners')
       .select('title')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError) {
@@ -190,7 +193,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('banners')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
 
     if (deleteError) {
       console.error('Error deleting banner:', deleteError)
@@ -204,7 +207,7 @@ export async function DELETE(
     await logAdminActivity(
       'banner_deleted',
       'banners',
-      params.id,
+      resolvedParams.id,
       { title: existingBanner.title }
     )
 
