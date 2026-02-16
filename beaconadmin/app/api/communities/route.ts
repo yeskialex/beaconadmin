@@ -42,8 +42,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseAdminClient()
 
     // Use a default system user ID for admin-created communities
-    // You can replace this with a specific system user ID if needed
-    const systemUserId = '2e393a2a-30cc-42f4-b415-c2645fba0078' // Using an existing user as system user
+    const systemUserId = process.env.SYSTEM_USER_ID
+    if (!systemUserId) {
+      return NextResponse.json(
+        { error: 'System configuration error: SYSTEM_USER_ID not configured' },
+        { status: 500 }
+      )
+    }
 
     // Create community
     const { data: community, error: createError } = await supabase

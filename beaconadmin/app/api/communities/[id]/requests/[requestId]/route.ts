@@ -76,7 +76,13 @@ export async function PATCH(
     // Update the join application status
     // Note: reviewed_by expects a UUID from auth.users, not admin_users
     // We'll use the system user ID for now
-    const systemUserId = '2e393a2a-30cc-42f4-b415-c2645fba0078' // Same as used for creating communities
+    const systemUserId = process.env.SYSTEM_USER_ID
+    if (!systemUserId) {
+      return NextResponse.json(
+        { error: 'System configuration error: SYSTEM_USER_ID not configured' },
+        { status: 500 }
+      )
+    }
 
     console.log('Updating join application status to:', action)
     const updateData = {
