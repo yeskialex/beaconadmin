@@ -4,7 +4,7 @@ import { validateAdminSession, logAdminActivity } from '@/lib/auth/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -16,6 +16,7 @@ export async function GET(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     const { data: newsletter, error } = await supabase
@@ -28,7 +29,7 @@ export async function GET(
           avatar_url
         )
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -45,7 +46,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -57,6 +58,7 @@ export async function PATCH(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
     const body = await request.json()
 
@@ -67,7 +69,7 @@ export async function PATCH(
         ...body,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single()
 
@@ -77,7 +79,7 @@ export async function PATCH(
     }
 
     // Log activity
-    await logAdminActivity('update_newsletter', 'newsletter', params.id, {
+    await logAdminActivity('update_newsletter', 'newsletter', resolvedParams.id, {
       changes: Object.keys(body)
     })
 
@@ -90,7 +92,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -102,19 +104,20 @@ export async function DELETE(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     // Get newsletter details before deletion for logging
     const { data: newsletter } = await supabase
       .from('newsletters')
       .select('title')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     const { error } = await supabase
       .from('newsletters')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
 
     if (error) {
       console.error('Error deleting newsletter:', error)
@@ -122,7 +125,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await logAdminActivity('delete_newsletter', 'newsletter', params.id, {
+    await logAdminActivity('delete_newsletter', 'newsletter', resolvedParams.id, {
       title: newsletter?.title
     })
 
