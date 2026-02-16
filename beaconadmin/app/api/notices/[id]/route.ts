@@ -13,7 +13,7 @@ const updateNoticeSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -25,6 +25,7 @@ export async function GET(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     const { data: notice, error } = await supabase
@@ -33,7 +34,7 @@ export async function GET(
         *,
         communities(name)
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -66,7 +67,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -78,6 +79,7 @@ export async function PUT(
       )
     }
 
+    const resolvedParams = await params
     const body = await request.json()
 
     // Validate input
@@ -96,7 +98,7 @@ export async function PUT(
     const { data: existingNotice, error: fetchError } = await supabase
       .from('community_notices')
       .select('community_id, title')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError) {
@@ -120,7 +122,7 @@ export async function PUT(
     const { data: notice, error: updateError } = await supabase
       .from('community_notices')
       .update(data)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select(`
         *,
         communities(name)
@@ -158,7 +160,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -170,13 +172,14 @@ export async function DELETE(
       )
     }
 
+    const resolvedParams = await params
     const supabase = await createServerSupabaseAdminClient()
 
     // Check if notice exists and get its details
     const { data: existingNotice, error: fetchError } = await supabase
       .from('community_notices')
       .select('community_id, title')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError) {
@@ -200,7 +203,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('community_notices')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
 
     if (deleteError) {
       console.error('Error deleting notice:', deleteError)
@@ -214,7 +217,7 @@ export async function DELETE(
     await logAdminActivity(
       'notice_deleted',
       'community_notices',
-      params.id,
+      resolvedParams.id,
       { title: existingNotice.title }
     )
 
