@@ -19,6 +19,9 @@ const communitySchema = z.object({
   is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
+  post_restrict: z.boolean(),
+  comment_restrict: z.boolean(),
+  event_restrict: z.boolean(),
   // Application settings
   join_description: z.string().min(10, 'Join page description must be at least 10 characters'),
   join_cover_url: z.string().optional(),
@@ -88,6 +91,9 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
       is_default: initialData?.is_default || false,
       scope: initialData?.scope || 'global',
       university_id: initialData?.university_id || '',
+      post_restrict: initialData?.post_restrict || false,
+      comment_restrict: initialData?.comment_restrict || false,
+      event_restrict: initialData?.event_restrict || false,
       join_description: initialData?.join_description || '',
       join_cover_url: initialData?.join_cover_url || '',
       join_button_text: initialData?.join_button_text || 'Apply to Join',
@@ -505,6 +511,44 @@ export default function CommunityFormWithApplication({ initialData, isEditing = 
                 </label>
               </div>
             )}
+
+            <div className="sm:col-span-2">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Content Restrictions</h3>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <input
+                    {...register('post_restrict')}
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Restrict Post Creation (Only admins can create posts)
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    {...register('comment_restrict')}
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Restrict Comments (Only admins can comment on posts)
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    {...register('event_restrict')}
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Restrict Event Creation (Only admins can create events)
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
