@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share } from 'lucide-react'
+import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share, Plus } from 'lucide-react'
+import AddPostForm from '@/components/posts/AddPostForm'
 
 export default function PostsPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, official: 0, pinned: 0 })
   const [loading, setLoading] = useState(true)
+  const [showAddPost, setShowAddPost] = useState(false)
 
   useEffect(() => {
     fetchPosts()
@@ -108,11 +110,20 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Posts Management</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Manage community posts, moderate content, and handle reported posts.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Posts Management</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Manage community posts, moderate content, and handle reported posts.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddPost(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Post
+        </button>
       </div>
 
       {/* Stats */}
@@ -177,6 +188,25 @@ export default function PostsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Post Form Modal */}
+      {showAddPost && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Create New Post</h3>
+              <p className="text-sm text-gray-600">Create an official admin post for a community</p>
+            </div>
+            <AddPostForm
+              onPostCreated={() => {
+                setShowAddPost(false)
+                fetchPosts() // Refresh the posts list
+              }}
+              onCancel={() => setShowAddPost(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Posts Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">

@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Eye, Edit, Trash2, Plus, Star, Users, Heart, Clock, Check, X, Upload, Image } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import dynamic from 'next/dynamic'
+
+// Dynamic import to avoid SSR issues with Tiptap
+const RichTextEditor = dynamic(
+  () => import('@/components/newsletters/RichTextEditor'),
+  {
+    ssr: false,
+    loading: () => <div className="h-96 bg-gray-50 animate-pulse rounded" />
+  }
+)
 
 interface Newsletter {
   id: string
@@ -653,13 +663,15 @@ export default function NewslettersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Content</label>
-                  <textarea
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    rows={6}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-black"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(html) => setFormData({ ...formData, content: html })}
+                    placeholder="Write your newsletter content here. You can format text, add images, and more..."
                   />
+                  <p className="mt-2 text-xs text-gray-500">
+                    📱 This content will be displayed properly in the Flutter mobile app using HTML rendering.
+                  </p>
                 </div>
 
                 <div>

@@ -1,29 +1,47 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect } from 'react'
 import { AlertTriangle, CheckCircle, Clock, XCircle, User, FileText, Calendar, MessageCircle } from 'lucide-react'
 
-export default async function ReportsPage() {
-  const supabase = await createServerSupabaseClient()
+export default function ReportsPage() {
+  const [reports, setReports] = useState<any[]>([])
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    reviewing: 0,
+    resolved: 0,
+    dismissed: 0,
+  })
+  const [loading, setLoading] = useState(true)
 
-  // Fetch reports with related data
-  const { data: reports, error } = await supabase
-    .from('user_reports')
-    .select(`
-      *,
-      community:communities(name)
-    `)
-    .order('created_at', { ascending: false })
+  useEffect(() => {
+    fetchReports()
+  }, [])
 
-  // Get report statistics
-  const { data: statsData } = await supabase
-    .from('user_reports')
-    .select('status')
+  const fetchReports = async () => {
+    try {
+      const response = await fetch('/api/reports')
+      if (response.ok) {
+        const data = await response.json()
+        setReports(data.reports || [])
 
-  const stats = {
-    total: statsData?.length || 0,
-    pending: statsData?.filter(r => r.status === 'pending').length || 0,
-    reviewing: statsData?.filter(r => r.status === 'reviewed').length || 0,
-    resolved: statsData?.filter(r => r.status === 'resolved').length || 0,
-    dismissed: statsData?.filter(r => r.status === 'dismissed').length || 0,
+        // Calculate stats
+        const reportsData = data.reports || []
+        setStats({
+          total: reportsData.length,
+          pending: reportsData.filter((r: any) => r.status === 'pending').length,
+          reviewing: reportsData.filter((r: any) => r.status === 'reviewed').length,
+          resolved: reportsData.filter((r: any) => r.status === 'resolved').length,
+          dismissed: reportsData.filter((r: any) => r.status === 'dismissed').length,
+        })
+      } else {
+        console.error('Failed to fetch reports')
+      }
+    } catch (error) {
+      console.error('Error fetching reports:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -209,7 +227,14 @@ export default async function ReportsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {reports && reports.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 mt-2">Loading reports...</p>
+                    </td>
+                  </tr>
+                ) : reports && reports.length > 0 ? (
                   reports.map((report) => {
                     const StatusIcon = getStatusIcon(report.status)
                     return (

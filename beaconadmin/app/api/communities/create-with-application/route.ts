@@ -14,6 +14,9 @@ const createCommunityWithApplicationSchema = z.object({
   is_default: z.boolean(),
   scope: z.enum(['global', 'institutional']),
   university_id: z.string().optional().nullable(),
+  post_restrict: z.boolean(),
+  comment_restrict: z.boolean(),
+  event_restrict: z.boolean(),
   // Join page info
   join_description: z.string().min(10),
   join_cover_url: z.string().optional(),
@@ -80,6 +83,9 @@ export async function POST(request: NextRequest) {
         is_default: data.is_default,
         scope: data.scope,
         university_id: data.scope === 'global' ? null : data.university_id,
+        post_restrict: data.post_restrict,
+        comment_restrict: data.comment_restrict,
+        event_restrict: data.event_restrict,
         creator_id: systemUserId,
         created_by_admin_id: admin.id, // Track which admin created it
       })
