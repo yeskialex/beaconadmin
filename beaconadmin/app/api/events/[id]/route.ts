@@ -225,13 +225,36 @@ export async function PATCH(
     const supabase = await createServerSupabaseAdminClient()
     const { id: eventId } = await params
 
+    // Prepare update data - filter out undefined values and handle null properly
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+
+    // Add fields if they exist in the request body
+    if (body.title !== undefined) updateData.title = body.title
+    if (body.description !== undefined) updateData.description = body.description
+    if (body.start_time !== undefined) updateData.start_time = body.start_time
+    if (body.end_time !== undefined) updateData.end_time = body.end_time
+    if (body.location !== undefined) updateData.location = body.location
+    if (body.is_community_event !== undefined) updateData.is_community_event = body.is_community_event
+    if (body.is_private !== undefined) updateData.is_private = body.is_private
+    if (body.remind_me !== undefined) updateData.remind_me = body.remind_me
+
+    // Handle UUID fields - convert empty strings to null
+    if (body.community_id !== undefined) {
+      updateData.community_id = body.community_id || null
+    }
+    if (body.category_id !== undefined) {
+      updateData.category_id = body.category_id || null
+    }
+    if (body.reminder_time !== undefined) {
+      updateData.reminder_time = body.reminder_time || null
+    }
+
     // Update event
     const { error } = await supabase
       .from('calendar_events')
-      .update({
-        ...body,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', eventId)
 
     if (error) {

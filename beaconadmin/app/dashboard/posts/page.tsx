@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share, Plus } from 'lucide-react'
+import { FileText, Eye, Trash2, Pin, Users, MessageSquare, Heart, Share, Plus, Pencil } from 'lucide-react'
 import AddPostForm from '@/components/posts/AddPostForm'
 
 export default function PostsPage() {
@@ -327,10 +327,17 @@ export default function PostsPage() {
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           className="text-blue-600 hover:text-blue-900 transition-colors"
-                         
+                          title="View Post"
                           onClick={() => router.push(`/dashboard/posts/${post.id}`)}
                         >
                           <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-green-600 hover:text-green-900 transition-colors"
+                          title="Edit Post"
+                          onClick={() => router.push(`/dashboard/posts/${post.id}/edit`)}
+                        >
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           className={`${post.is_pinned ? 'text-green-600 hover:text-green-900' : 'text-yellow-600 hover:text-yellow-900'} transition-colors`}
@@ -341,7 +348,7 @@ export default function PostsPage() {
                         </button>
                         <button
                           className="text-red-600 hover:text-red-900 transition-colors"
-                         
+                          title="Delete Post"
                           onClick={() => deletePost(post.id, post.title || post.content?.slice(0, 50))}
                         >
                           <Trash2 className="h-4 w-4" />

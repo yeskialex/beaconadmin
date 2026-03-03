@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Heart, MessageSquare, Share, Pin, Eye, User, Calendar, Flag, Trash2 } from 'lucide-react'
+import { ArrowLeft, Heart, MessageSquare, Share, Pin, Eye, User, Calendar, Flag, Trash2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -218,6 +218,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
               {/* Action Buttons */}
               <div className="flex items-center space-x-2">
                 <button
+                  onClick={() => router.push(`/dashboard/posts/${post.id}/edit`)}
+                  className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                  title="Edit post"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
                   onClick={handlePin}
                   className={`p-2 rounded-lg transition-colors ${
                     post.is_pinned
@@ -232,7 +239,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
-                 
+                  title="Delete post"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

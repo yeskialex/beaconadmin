@@ -322,9 +322,9 @@ export default function EventsPage() {
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            className="text-yellow-600 hover:text-yellow-900 transition-colors"
-                           
-                            onClick={() => alert('Edit event functionality coming soon')}
+                            className="text-green-600 hover:text-green-900 transition-colors"
+                            title="Edit Event"
+                            onClick={() => router.push(`/dashboard/events/${event.id}/edit`)}
                           >
                             <Edit className="h-4 w-4" />
                           </button>

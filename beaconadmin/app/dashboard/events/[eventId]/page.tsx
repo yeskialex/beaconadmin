@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Calendar, Clock, Users, MapPin, User, Eye, Lock, Globe, Trash2, Edit } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, Users, MapPin, User, Eye, Lock, Globe, Trash2, Edit, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -235,10 +235,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               {/* Action Buttons */}
               <div className="flex items-center space-x-2">
                 <button
+                  onClick={() => router.push(`/dashboard/events/${event.id}/edit`)}
+                  className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                  title="Edit event"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
-                 
+                  title="Delete event"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

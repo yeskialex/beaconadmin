@@ -217,13 +217,23 @@ export async function PATCH(
     const supabase = await createServerSupabaseAdminClient()
     const { id: postId } = await params
 
-    // Update post (for pinning, marking official, etc.)
+    // Prepare update data - only include fields that should be updated
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+
+    // Add fields if they exist in the request body
+    if (body.title !== undefined) updateData.title = body.title
+    if (body.content !== undefined) updateData.content = body.content
+    if (body.community_id !== undefined) updateData.community_id = body.community_id
+    if (body.is_official !== undefined) updateData.is_official = body.is_official
+    if (body.is_pinned !== undefined) updateData.is_pinned = body.is_pinned
+    if (body.media_urls !== undefined) updateData.media_urls = body.media_urls
+
+    // Update post
     const { error } = await supabase
       .from('community_posts')
-      .update({
-        ...body,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', postId)
 
     if (error) {
@@ -239,7 +249,7 @@ export async function PATCH(
       'post_updated',
       'community_posts',
       postId,
-      { updates: body, updated_by: admin.id }
+      { updates: updateData, updated_by: admin.id }
     )
 
     return NextResponse.json({ success: true })
